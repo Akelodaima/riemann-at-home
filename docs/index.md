@@ -8,7 +8,7 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 - Code and instructions: https://github.com/riemann-at-home/riemann-at-home
 - Discuss on Hacker News: https://news.ycombinator.com/item?id=50594006
 - Raw data: https://riemann-at-home.github.io/riemann-at-home/data.json (format: CONTRACT.md in the repository)
-- Updated: 2026-11-26T20:14:58Z
+- Updated: 2026-11-26T20:29:54Z
 
 ## Totals
 
@@ -16,7 +16,7 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 - Modules built at least once: 175,187 of 175,187 (100.0%)
 - Modules built 3 or more times: 175,187
 - Whole proofs finished (17M): 15
-- Whole proofs finished (300K): 22
+- Whole proofs finished (300K): 23
 
 ## Leaderboard
 
@@ -60,22 +60,22 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 30. nwinter (github.com/nwinter): 300K: all 803 modules in 0.4 h, Apple M5 Ultra
 31. ksdme (github.com/ksdme): 300K: all 803 modules in 12.0 h, Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz
 32. Connell McGinley: 300K: all 803 modules in 4.8 h, Apple M2 Pro
+33. ic: 300K: all 803 modules in 5.3 h, Apple M4 Max
 
 ### Building now
 
 - JustinAzoff (github.com/JustinAzoff): 803 of 803 300K modules (100.0%), Oxide Virtual Turin-like Processor
-- ic: 788 of 803 300K modules (98.1%), Apple M4 Max
-- JustinAzoff (github.com/JustinAzoff): 88,069 of 175,187 17M modules (50.3%), Oxide Virtual Turin-like Processor
-- apoland (github.com/apoland): 73,310 of 175,187 17M modules (41.8%), AMD EPYC (Naples) 32-Core Processor
-- tgragnato (github.com/tgragnato): 70,506 of 175,187 17M modules (40.2%), Intel(R) Celeron(R) J6413 @ 1.80GHz
-- dhoeppne (github.com/dhoeppne): 53,485 of 175,187 17M modules (30.5%), Intel(R) Xeon(R) Gold 6240 CPU @ 2.60GHz
-- cardoso-neto (github.com/cardoso-neto): 35,285 of 175,187 17M modules (20.1%), AMD Ryzen 9 5900X 12-Core Processor
+- JustinAzoff (github.com/JustinAzoff): 90,330 of 175,187 17M modules (51.6%), Oxide Virtual Turin-like Processor
+- apoland (github.com/apoland): 74,618 of 175,187 17M modules (42.6%), AMD EPYC (Naples) 32-Core Processor
+- tgragnato (github.com/tgragnato): 70,834 of 175,187 17M modules (40.4%), Intel(R) Celeron(R) J6413 @ 1.80GHz
+- dhoeppne (github.com/dhoeppne): 55,793 of 175,187 17M modules (31.8%), Intel(R) Xeon(R) Gold 6240 CPU @ 2.60GHz
+- cardoso-neto (github.com/cardoso-neto): 38,078 of 175,187 17M modules (21.7%), AMD Ryzen 9 5900X 12-Core Processor
 - framiere (github.com/framiere): 21,921 of 175,187 17M modules (12.5%), Apple M4 Pro
-- talonius (github.com/talonius): 16,269 of 175,187 17M modules (9.3%), AMD Ryzen 9 9950X3D 16-Core Processor
-- nwinter (github.com/nwinter): 10,351 of 175,187 17M modules (5.9%), Apple M5 Ultra
+- talonius (github.com/talonius): 21,713 of 175,187 17M modules (12.4%), AMD Ryzen 9 9950X3D 16-Core Processor
+- nwinter (github.com/nwinter): 12,036 of 175,187 17M modules (6.9%), Apple M5 Ultra
 - cardoso-neto (github.com/cardoso-neto): 9,030 of 175,187 17M modules (5.2%), AMD Ryzen 7 7700X 8-Core Processor
 - Aerlinger (github.com/Aerlinger): 3,793 of 175,187 17M modules (2.2%), Apple M5 Pro
-- jimjones: 2,564 of 175,187 17M modules (1.5%), Apple M2 Pro
+- jimjones: 3,223 of 175,187 17M modules (1.8%), Apple M2 Pro
 - luvchurchill (github.com/luvchurchill): 1 of 175,187 17M modules (0.0%), Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz
 
 ## Also checked independently by
