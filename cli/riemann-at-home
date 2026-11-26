@@ -50,6 +50,7 @@ EXPORT_SHA256 = "5ea74b912147c5c93cc2b6d70cc727cf908df2f62ac6a20480a3fa02f6be244
 EXPORT_BYTES = 61570595788
 EXPORTER_REPO = "https://github.com/leanprover/lean4export"
 EXPORTER_TAG = "v4.33.0"
+EXPORTER_COMMIT = "15f6055e299ad5b89345e533cc2192f4cc00f659"   # what the tag points to; a tag can be moved, a commit can't
 # The reference export is `lake env lean4export Main -- $(cat export-targets.txt)`: only these declarations and what
 # they depend on, not everything in Main (an untargeted export runs past 61.6 GB and can never match; issue #15).
 # Copied from https://github.com/Deicyde/riemann-hypothesis/blob/e848b39b/export-targets.txt (sha256 9eeb2e5e…05e8),
@@ -2553,6 +2554,83 @@ def patch_fast_exit(main_lean: str):
     return body + FAST_EXIT_ADD
 
 
+# Trial: parallel export (issue #24; proposed upstream in https://github.com/leanprover/lean4export/issues/62). Two
+# commits on top of lean4export: #61 (a smaller object cache) and #63 (a parallel walk and merge). They
+# are pinned by hash, so what gets built can't change under us. Upstream measured the full proof on 16 cores: 1 h 54 m
+# with #61 alone, 28 m with both, the same sha256, 89 GB peak memory (one run each, one computer).
+PARALLEL_REPO = "https://github.com/abhiapsunde/lean4export"
+PARALLEL_COMMIT = "73d9ad9b12ff10a40e5b7a8fcb70f038e163fcc3"
+PARALLEL_PARENTS = ["bd0b60df55394cfe1a795de0adeedb5abcf0f8c2",    # lean4export#61 (its head)
+                    "df81913eee5519d5a88ae5b0fd701b5298cc29ab"]    # lean4export master the two were written on
+PARALLEL_RAM_MINIMUM_GB = 100     # upstream measured an 89 GB peak (16 cores, one run); its 125 GiB machine must pass
+PARALLEL_FILES = ["Export.lean", "Export", "Main.lean"]        # the exporter's sources; not its tests or toolchain
+
+
+# The parallel path's version of the fix in issue #24: don't free the merge thread's tables just before the process
+# ends. Exiting early is not enough here: the Lean compiler releases the tables after their last use, which comes before
+# an exit call added at this spot. `Runtime.forget` keeps a reference for good, so they are never freed one by one and
+# the operating system reclaims the memory when the process exits.
+PARALLEL_END = "      finishOutputG : MB Unit).run {}\n"
+PARALLEL_FORGET = ("      finishOutputG\n"
+                   "      Runtime.forget (← get) : MB Unit).run {}\n")
+
+
+def patch_parallel_forget(par_lean: str):
+    """The parallel exporter's Export/Par.lean keeping its tables until the process ends, or None if the file does not
+    fit."""
+    if par_lean.count(PARALLEL_END) != 1:
+        return None
+    return par_lean.replace(PARALLEL_END, PARALLEL_FORGET)
+
+
+# Par.lean skips `partial def`s, as lean4export master does since 0c79a8b; v4.33.0, which made the reference export,
+# keeps them. Our copy follows v4.33.0, so the two exporters walk the same declarations.
+PARALLEL_PARTIAL = "if ((declar.isUnsafe || declar.isPartial) && !ctx.exportUnsafe)"
+PARALLEL_PARTIAL_V433 = "if (declar.isUnsafe && !ctx.exportUnsafe)"
+
+
+def patch_parallel_partial(par_lean: str):
+    """Par.lean with v4.33.0's rule for partial definitions, or None if the file does not fit."""
+    if par_lean.count(PARALLEL_PARTIAL) != 1:
+        return None
+    return par_lean.replace(PARALLEL_PARTIAL, PARALLEL_PARTIAL_V433)
+
+
+def parallel_ram_problem(ram_gb: float):
+    """Why --parallel shouldn't run on this computer, or None (unknown memory: let it try)."""
+    if ram_gb and ram_gb < PARALLEL_RAM_MINIMUM_GB:
+        return (f"--parallel needs about {PARALLEL_RAM_MINIMUM_GB} GB of memory and this computer has {ram_gb:.0f} GB; "
+                "run export without --parallel")
+    return None
+
+
+def apply_parallel(src: Path):
+    """Put the two pinned commits' source changes onto the checkout of EXPORTER_TAG in `src`. They were written for a
+    newer lean4export, so they are applied as a diff (`git apply` takes all of it or nothing)."""
+    git = ["git", "-C", src]
+    if run([*git, "fetch", "-q", "--depth", "3", PARALLEL_REPO, PARALLEL_COMMIT]).returncode != 0:
+        raise Fail(f"could not download the parallel exporter from {PARALLEL_REPO}; run export without --parallel")
+    got = [run([*git, "rev-parse", f"{PARALLEL_COMMIT}~{k}"], capture_output=True, text=True).stdout.strip()
+           for k in (1, 2)]
+    if got != PARALLEL_PARENTS:
+        raise Fail("the parallel exporter's history is not the one we reviewed; run export without --parallel")
+    d = run([*git, "diff", "--binary", f"{PARALLEL_COMMIT}~2", PARALLEL_COMMIT, "--", *PARALLEL_FILES],
+            capture_output=True)
+    if d.returncode != 0 or not d.stdout or run([*git, "apply"], input=d.stdout).returncode != 0:
+        raise Fail(f"the parallel changes do not apply to lean4export {EXPORTER_TAG}; run export without --parallel")
+    par = src / "Export" / "Par.lean"
+    patched = patch_parallel_partial(par.read_text())
+    patched = patch_parallel_forget(patched) if patched is not None else None
+    if patched is None:
+        raise Fail("the parallel exporter's Export/Par.lean is not the one the cleanup fix fits; "
+                   "run export without --parallel")
+    par.write_text(patched)
+
+
+def exporter_name(a) -> str:
+    return f"lean4export {EXPORTER_TAG}" + (f" + parallel {PARALLEL_COMMIT[:8]}" if getattr(a, "parallel", False) else "")
+
+
 def exporter_command(ctx: Ctx, a) -> list:
     """`lake env <lean4export> Main`, run in the build folder. lean4export is built once from the pinned tag into
     ~/.riemann-at-home/tools, with the PROOF's toolchain (TOOLCHAIN), not the one the tag pins: Lean only reads
@@ -2561,9 +2639,12 @@ def exporter_command(ctx: Ctx, a) -> list:
     exporter built the old way is never reused."""
     if getattr(a, "exporter", None):                         # testing: a stand-in exporter
         return [a.exporter, "Main", "--", *EXPORT_TARGETS]
-    fast = bool(getattr(a, "fast_exit", False))         # export's default is on (matched the reference, issue #24)
+    parallel = bool(getattr(a, "parallel", False))
+    # export's default is on (matched the reference, issue #24); the parallel exporter has its own version of that fix
+    fast = bool(getattr(a, "fast_exit", False)) and not parallel
+    variant = "-fastexit" if fast else f"-parallel-{PARALLEL_COMMIT[:8]}-forget-v433partial" if parallel else ""
     src = ctx.home / "tools" / (f"lean4export-{EXPORTER_TAG}-lean-{TOOLCHAIN.rsplit(':', 1)[-1]}"
-                                + ("-fastexit" if fast else ""))   # never mixed up with the unpatched build
+                                + variant)   # never mixed up with the unpatched build
     exe = src / ".lake/build/bin/lean4export"
     if not exe.exists():
         if not src.exists():
@@ -2572,6 +2653,11 @@ def exporter_command(ctx: Ctx, a) -> list:
             if run(["git", "clone", "-q", "--depth", "1", "--branch", EXPORTER_TAG, EXPORTER_REPO, tmp]).returncode != 0:
                 shutil.rmtree(tmp, ignore_errors=True)
                 raise Fail(f"could not download lean4export {EXPORTER_TAG} from {EXPORTER_REPO}")
+            head = run(["git", "-C", tmp, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+            if head != EXPORTER_COMMIT:
+                shutil.rmtree(tmp, ignore_errors=True)
+                raise Fail(f"lean4export {EXPORTER_TAG} is now commit {head[:12] or '?'}, not the {EXPORTER_COMMIT[:12]} "
+                           "this tool checks against; please report it in the Riemann@home issues")
             (tmp / "lean-toolchain").write_text(TOOLCHAIN + "\n")    # build with the proof's Lean (see above)
             if fast:
                 patched = patch_fast_exit((tmp / "Main.lean").read_text())
@@ -2580,6 +2666,12 @@ def exporter_command(ctx: Ctx, a) -> list:
                     raise Fail(f"lean4export {EXPORTER_TAG}'s Main.lean is not the one the fast exit fits; "
                                "run export --no-fast-exit")
                 (tmp / "Main.lean").write_text(patched)
+            if parallel:
+                try:
+                    apply_parallel(tmp)
+                except Fail:
+                    shutil.rmtree(tmp, ignore_errors=True)
+                    raise
             tmp.rename(src)
         tc = toolchain_of(src)
         if tc != TOOLCHAIN:
@@ -2816,6 +2908,12 @@ def cmd_export(ctx: Ctx, a):
     warn = export_memory_warning(total_ram_gb())
     if warn:
         print(warn, file=sys.stderr)
+    if getattr(a, "parallel", False):
+        problem = parallel_ram_problem(total_ram_gb())
+        if problem:
+            raise Fail(problem)
+        print("trial: parallel export on all cores. The memory figures above are for the standard exporter; upstream "
+              "measured a peak of 89 GB with this one (one computer). The result is compared with the reference as usual.")
     t0 = time.time()
     pf = ctx.home / "export-progress.json"
     base = {"build_id": rec["build_id"], "olean_digest": rec["olean_digest"]}
@@ -2846,7 +2944,7 @@ def cmd_export(ctx: Ctx, a):
         print("this export did not match, but an earlier one on this build did: keeping that result (Level 2 stays)")
     else:
         ctx.set_conf(levels={"build_id": rec["build_id"], "olean_digest": rec["olean_digest"],
-                             "export": {"sha256": sha, "bytes": n, "exporter": f"lean4export {EXPORTER_TAG}",
+                             "export": {"sha256": sha, "bytes": n, "exporter": exporter_name(a),
                                         "seconds": int(time.time() - t0), "when": iso(time.time())},
                              "checkers": lv.get("checkers", []) if same else [],
                              "sign_statement": (bool(lv.get("sign_statement")) and same or advance) and match})
@@ -3509,6 +3607,8 @@ def main(argv=None):
                         help="Level 2: hash the proof export (lean4export, streamed, never stored) against the reference")
     ex.add_argument("--check", action="store_true",
                     help="just check that the exporter works on this computer (exports one compiled module, about a minute)")
+    ex.add_argument("--parallel", action="store_true",      # experimental, so not in --help until it has a run of ours
+                    help=argparse.SUPPRESS)
     ex.add_argument("--fast-exit", action=argparse.BooleanOptionalAction, default=True,
                     help="skip lean4export's slow memory cleanup after the last byte (issue #24); same output. "
                          "On by default since a full export matched the reference with it; --no-fast-exit turns it off")
@@ -3530,6 +3630,8 @@ def main(argv=None):
     x.add_argument("--target")
     x.add_argument("--test-unofficial-folder", action="store_true")
     a = ap.parse_args(argv)
+    if a.cmd == "export" and a.parallel and not a.fast_exit:
+        ap.error("--no-fast-exit is for the standard exporter only; leave it out with --parallel")
     try:
         if a.proof == "both" and a.cmd != "setup":
             raise Fail("--proof both is for setup only; other commands take --proof 300k or --proof 17m")

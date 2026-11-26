@@ -733,6 +733,8 @@ class Levels(unittest.TestCase):
             calls.append(list(map(str, cmd)))
             if cmd[:2] == ["git", "clone"]:
                 d = Path(cmd[-1]); d.mkdir(parents=True); (d / "lean-toolchain").write_text("leanprover/lean4:v4.33.0\n")
+            elif "rev-parse" in map(str, cmd):
+                return subprocess.CompletedProcess(cmd, 0, rah.EXPORTER_COMMIT + "\n")
             elif str(cmd[-1]) == "build":
                 exe = Path(cwd) / ".lake/build/bin/lean4export"; exe.parent.mkdir(parents=True); exe.write_text("")
             return subprocess.CompletedProcess(cmd, 0)
@@ -1208,6 +1210,8 @@ class FastExit(unittest.TestCase):
         ctx = types.SimpleNamespace(home=home)
         seen = []
         def fake_run(cmd, **kw):
+            if "rev-parse" in map(str, cmd):
+                return types.SimpleNamespace(returncode=0, stdout=rah.EXPORTER_COMMIT + "\n")
             seen.append(cmd); dest = Path(cmd[-1]); dest.mkdir(parents=True)
             (dest / "Main.lean").write_text(self.MAIN); return types.SimpleNamespace(returncode=0)
         with mock.patch.object(rah, "run", fake_run), mock.patch.object(rah, "ensure_elan", side_effect=rah.Fail("stop")):
@@ -1218,6 +1222,78 @@ class FastExit(unittest.TestCase):
         self.assertEqual(len(names), 2); self.assertTrue(names[1].endswith("-fastexit"), names)
         self.assertNotIn("IO.Process.exit", (home / "tools" / names[0] / "Main.lean").read_text())
         self.assertIn("IO.Process.exit 0", (home / "tools" / names[1] / "Main.lean").read_text())
+
+
+class Parallel(unittest.TestCase):
+    """export --parallel (issue #24): an experimental, pinned copy of the parallel lean4export from lean4export#63,
+    with our review's fixes (2026-11-26)."""
+    LINE = "  if ((declar.isUnsafe || declar.isPartial) && !ctx.exportUnsafe) || (← get).contains c then\n"
+    END = "    (do\n      finishOutputG : MB Unit).run {}\n"
+
+    def test_partial_rule_matches_v4_33_0(self):
+        out = rah.patch_parallel_partial(self.LINE)
+        self.assertEqual(out, "  if (declar.isUnsafe && !ctx.exportUnsafe) || (← get).contains c then\n")
+        self.assertIsNone(rah.patch_parallel_partial(out))                    # never twice
+        self.assertIsNone(rah.patch_parallel_partial(self.LINE * 2))          # exactly one place
+
+    def test_real_par_lean_if_present(self):
+        p = Path(os.environ.get("RAH_PAR_LEAN", "/nonexistent"))
+        if not p.exists():
+            self.skipTest("set RAH_PAR_LEAN to Export/Par.lean at the pinned parallel commit")
+        out = rah.patch_parallel_forget(rah.patch_parallel_partial(p.read_text()))
+        self.assertNotIn("isPartial", out); self.assertIn("Runtime.forget (← get)", out)
+
+    def apply_with(self, parents):
+        from unittest import mock
+        calls = []
+        def fake_run(cmd, **kw):
+            cmd = list(map(str, cmd)); calls.append(cmd)
+            if "rev-parse" in cmd:
+                k = int(cmd[-1].rsplit("~", 1)[1])
+                return types.SimpleNamespace(returncode=0, stdout=parents[k - 1] + "\n")
+            return types.SimpleNamespace(returncode=0, stdout=b"diff")
+        src = Path(tempfile.mkdtemp(dir=TMP)); self.addCleanup(shutil.rmtree, src, True)
+        (src / "Export").mkdir(); (src / "Export" / "Par.lean").write_text(self.LINE + self.END)
+        with mock.patch.object(rah, "run", fake_run):
+            rah.apply_parallel(src)
+        return calls, (src / "Export" / "Par.lean").read_text()
+
+    def test_applies_only_the_reviewed_history(self):
+        calls, par = self.apply_with(rah.PARALLEL_PARENTS)
+        self.assertIn(rah.PARALLEL_COMMIT, calls[0])                           # fetched by full hash
+        self.assertNotIn("isPartial", par); self.assertIn("Runtime.forget", par)
+        with self.assertRaises(rah.Fail):
+            self.apply_with(["0" * 40, rah.PARALLEL_PARENTS[1]])
+
+    def test_refuses_a_moved_exporter_tag(self):
+        from unittest import mock
+        home = Path(tempfile.mkdtemp(dir=TMP)); self.addCleanup(shutil.rmtree, home, True)
+        def fake_run(cmd, **kw):
+            if "rev-parse" in map(str, cmd):
+                return types.SimpleNamespace(returncode=0, stdout="f" * 40 + "\n")
+            Path(cmd[-1]).mkdir(parents=True); return types.SimpleNamespace(returncode=0)
+        with mock.patch.object(rah, "run", fake_run), self.assertRaises(rah.Fail) as e:
+            rah.exporter_command(types.SimpleNamespace(home=home), types.SimpleNamespace(exporter=None, fast_exit=True))
+        self.assertIn("not the", str(e.exception))
+        self.assertEqual(list((home / "tools").iterdir()), [])                 # nothing half-made left behind
+
+    def test_needs_memory(self):
+        self.assertIsNotNone(rah.parallel_ram_problem(64))
+        self.assertIsNone(rah.parallel_ram_problem(125))                      # upstream's 125 GiB machine ran it
+        self.assertIsNone(rah.parallel_ram_problem(0))                        # unknown: let it try
+
+    def test_flag_is_hidden_and_needs_fast_exit(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), self.assertRaises(SystemExit):
+            rah.main(["export", "--help"])
+        self.assertNotIn("--parallel", out.getvalue())
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            rah.main(["export", "--parallel", "--no-fast-exit", "--proof", "17m"])
+
+    def test_record_names_the_exporter(self):
+        self.assertEqual(rah.exporter_name(types.SimpleNamespace(parallel=True)),
+                         f"lean4export v4.33.0 + parallel {rah.PARALLEL_COMMIT[:8]}")
+        self.assertEqual(rah.exporter_name(types.SimpleNamespace()), "lean4export v4.33.0")
 
 
 class RealSubmit(unittest.TestCase):
