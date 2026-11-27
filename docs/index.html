@@ -101,7 +101,7 @@
   .hr .m{grid-column:3 / 5;color:#b9d0ff;font-size:11px;font-weight:normal}
   .whole{color:#000;background:#ffd23f;font-size:9px;letter-spacing:1px;padding:1px 5px;margin-left:6px;vertical-align:1px}
   .lvl{color:#000;font-size:9px;letter-spacing:1px;padding:1px 5px;margin-left:4px;vertical-align:1px;white-space:nowrap}
-  .fastest{color:#ff6ec7;font-weight:bold}
+  .fastest{color:#ff6ec7;font-weight:bold}.lvl.fastb{background:#ff6ec7;color:#000;font-weight:bold}
   .lvl.l2{background:#7dff95}.lvl.l3{background:#7fd8ff}
   /* second proof (CONTRACT "Several proofs", 2026-11-25): per-proof badges, 17M gold and 300K violet */
   .whole.p17{background:#ffd23f}.whole.p3{background:#c9a7ff}.run .whole{margin-left:0;flex:none}
@@ -559,8 +559,13 @@ const FAST17 = fastestOf(p => p.whole_proof ? {build_hours: p.proofs?.["17m"]?.b
                                                build_seconds: p.proofs?.["17m"]?.build_seconds,
                                                finished: p.proofs?.["17m"]?.finished ?? p.finished} : null);
 const FAST3 = fastestOf(p => has3(p) ? p3(p) : null);
-const fast = (p, which, text) => (which === "17m" ? FAST17 : FAST3) === (p.who || p.name)
+const isFast = (p, which) => (which === "17m" ? FAST17 : FAST3) === (p.who || p.name);
+const fast = (p, which, text) => isFast(p, which)
   ? `<b class="fastest">${text} · fastest ${which === "17m" ? "17M" : "300K"} build</b>` : text;
+// compact rows cut their facts off at the edge: there the time is just pink, and the label is a badge (never cut)
+const fastPink = (p, which, text) => isFast(p, which) ? `<b class="fastest">${text}</b>` : text;
+const fastBadges = p => (isFast(p, "17m") ? '<span class="lvl fastb" title="Fastest whole 17M build">FASTEST 17M</span>' : "")
+                      + (isFast(p, "300k") ? '<span class="lvl fastb" title="Fastest whole 300K build">FASTEST 300K</span>' : "");
 const facts3 = p => { const k = p3(p), bits = [fast(p, "300k", `300K in ${hours(k.build_hours) || "?"}`)];
   if (!p.whole_proof && k.machine) bits.push(esc(k.machine));
   return bits.join(" · "); };
@@ -619,15 +624,15 @@ if (COMPACT && rowsAll.length > TOP) {
   const shown = new Set(rowsAll.slice(0, TOP));
   const cfacts = p => { const k = p3(p), bits = [];
     if (p.whole_proof) {
-      if (p.build_hours != null) bits.push(fast(p, "17m", (TIERED && k?.whole ? "17M " : "") + hours(p.build_hours)));
-      if (p.machine) bits.push(esc(p.machine));
+      if (p.build_hours != null) bits.push(fastPink(p, "17m", (TIERED && k?.whole ? "17M " : "") + hours(p.build_hours)));
+      if (TIERED && k?.whole) bits.push(fastPink(p, "300k", `300K ${hours(k.build_hours) || "?"}`));   // times first:
+      if (p.machine) bits.push(esc(p.machine));                    // the row is cut off at its right edge
       if (p.export?.done && p.export.matches) bits.push(`export ${dur(p.export.seconds)}`);
-      if (TIERED && k?.whole) bits.push(fast(p, "300k", `300K ${hours(k.build_hours) || "?"}`));
     } else if (k?.whole) {
-      if (k.build_hours != null) bits.push(fast(p, "300k", hours(k.build_hours))); if (k.machine) bits.push(esc(k.machine)); }
+      if (k.build_hours != null) bits.push(fastPink(p, "300k", hours(k.build_hours))); if (k.machine) bits.push(esc(k.machine)); }
     return bits.join(" · "); };
   const cRow = it => `<div class="crow${it.v ? "" : " cw"}${it.cls === " k3" ? " k3" : ""}" data-who="${esc(it.p.who || it.p.name)}"><span class="rk">${it.v ? it.rank : ""}</span>` +
-    `${avatar(it.p, 30)}<span class="nm">${person(it.p)}</span><span class="bd">${badges(it.p)}${levelBadge(it.p.level)}` +
+    `${avatar(it.p, 30)}<span class="nm">${person(it.p)}</span><span class="bd">${badges(it.p)}${levelBadge(it.p.level)}${fastBadges(it.p)}` +
     (signed.has(it.p.who || it.p.name) ? '<span class="lvl sg" title="Signed the joint statement">SIGNED</span>' : "") +
     `</span><span class="facts">${cfacts(it.p)}</span></div>`;
   let compact = "", rest = "", pendingHdr = "", hdr = "";   // a tier header goes with the first row under it;
