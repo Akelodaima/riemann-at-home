@@ -8,7 +8,7 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 - Code and instructions: https://github.com/riemann-at-home/riemann-at-home
 - Discuss on Hacker News: https://news.ycombinator.com/item?id=50594006
 - Raw data: https://riemann-at-home.github.io/riemann-at-home/data.json (format: CONTRACT.md in the repository)
-- Updated: 2026-11-27T22:29:37Z
+- Updated: 2026-11-27T22:44:24Z
 
 ## Totals
 
@@ -86,24 +86,24 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 
 ### Building now
 
-- cardoso-neto (github.com/cardoso-neto): 167,057 of 175,187 17M modules (95.4%), AMD Ryzen 9 5900X 12-Core Processor
-- cardoso-neto (github.com/cardoso-neto): 136,652 of 175,187 17M modules (78.0%), AMD Ryzen 7 7700X 8-Core Processor
+- cardoso-neto (github.com/cardoso-neto): 168,083 of 175,187 17M modules (95.9%), AMD Ryzen 9 5900X 12-Core Processor
+- cardoso-neto (github.com/cardoso-neto): 138,203 of 175,187 17M modules (78.9%), AMD Ryzen 7 7700X 8-Core Processor
 - bha: 614 of 803 300K modules (76.5%), 11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz
-- nwinter (github.com/nwinter): 125,922 of 175,187 17M modules (71.9%), Apple M5 Ultra
-- Ayake: 119,943 of 175,187 17M modules (68.5%), AMD EPYC 7402 24-Core Processor
-- masoud-al (github.com/masoud-al): 114,365 of 175,187 17M modules (65.3%), AMD Ryzen 9 7900X3D 12-Core Processor
-- Nico: 429 of 803 300K modules (53.4%), Apple M5
-- tgragnato (github.com/tgragnato): 90,230 of 175,187 17M modules (51.5%), Intel(R) Celeron(R) J6413 @ 1.80GHz
-- oliverweissl (github.com/oliverweissl): 50,337 of 175,187 17M modules (28.7%), AMD EPYC 9354P 32-Core Processor
-- Stephen Frost: 49,062 of 175,187 17M modules (28.0%), AMD Ryzen AI 7 350 w/ Radeon 860M
-- jimjones: 45,451 of 175,187 17M modules (25.9%), Apple M2 Pro
+- nwinter (github.com/nwinter): 127,256 of 175,187 17M modules (72.6%), Apple M5 Ultra
+- Ayake: 122,149 of 175,187 17M modules (69.7%), AMD EPYC 7402 24-Core Processor
+- masoud-al (github.com/masoud-al): 115,862 of 175,187 17M modules (66.1%), AMD Ryzen 9 7900X3D 12-Core Processor
+- Nico: 439 of 803 300K modules (54.7%), Apple M5
+- tgragnato (github.com/tgragnato): 90,337 of 175,187 17M modules (51.6%), Intel(R) Celeron(R) J6413 @ 1.80GHz
+- oliverweissl (github.com/oliverweissl): 56,372 of 175,187 17M modules (32.2%), AMD EPYC 9354P 32-Core Processor
+- Stephen Frost: 49,668 of 175,187 17M modules (28.4%), AMD Ryzen AI 7 350 w/ Radeon 860M
+- jimjones: 45,516 of 175,187 17M modules (26.0%), Apple M2 Pro
 - matematicaabierta: 203 of 803 300K modules (25.3%), Apple M1
-- Francois Beaune: 38,040 of 175,187 17M modules (21.7%), AMD Ryzen Threadripper 3970X 32-Core Processor
-- DenysPiven (github.com/DenysPiven): 34,971 of 175,187 17M modules (20.0%), Apple M4 Pro
+- Francois Beaune: 38,082 of 175,187 17M modules (21.7%), AMD Ryzen Threadripper 3970X 32-Core Processor
+- DenysPiven (github.com/DenysPiven): 35,750 of 175,187 17M modules (20.4%), Apple M4 Pro
 - framiere (github.com/framiere): 21,921 of 175,187 17M modules (12.5%), Apple M4 Pro
-- alvarezjuan (github.com/alvarezjuan): 11,791 of 175,187 17M modules (6.7%), 13th Gen Intel(R) Core(TM) i9-13900H
-- Akelodaima (github.com/Akelodaima): 10,585 of 175,187 17M modules (6.0%), Intel(R) Core(TM) Ultra 7 258V
-- rcland12 (github.com/rcland12): 9,455 of 175,187 17M modules (5.4%), AMD EPYC 7742 64-Core Processor
+- alvarezjuan (github.com/alvarezjuan): 12,309 of 175,187 17M modules (7.0%), 13th Gen Intel(R) Core(TM) i9-13900H
+- Akelodaima (github.com/Akelodaima): 11,016 of 175,187 17M modules (6.3%), Intel(R) Core(TM) Ultra 7 258V
+- rcland12 (github.com/rcland12): 10,760 of 175,187 17M modules (6.1%), AMD EPYC 7742 64-Core Processor
 - Aerlinger (github.com/Aerlinger): 3,793 of 175,187 17M modules (2.2%), Apple M5 Pro
 - Carl Aza: 11 of 803 300K modules (1.4%), Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
 - sergey9295 (github.com/sergey9295): 441 of 175,187 17M modules (0.3%), AMD Ryzen 5 5600X 6-Core Processor
@@ -169,7 +169,7 @@ Signatures so far: 55, in the order they first finished.
 - VoX (first finished 2026-11-26, added from their build record): 300K BUILT
 - dominik-alexander-mueller (first finished 2026-11-26, added from their build record): 17M BUILT, 300K BUILT
 - talonius (first finished 2026-11-26, added from their build record): 17M BUILT, 300K BUILT
-- apoland (signed 2026-11-27): 17M BUILT, 300K BUILT, EXPORT REPRODUCED, RE-CHECKED: con-leche
+- apoland (signed 2026-11-27): 17M BUILT, 300K BUILT, EXPORT REPRODUCED, RE-CHECKED: con-leche, RE-CHECKED: nanoda
 - cardoso-neto (first finished 2026-11-26, added from their build record): 300K BUILT
 - lupine.sh (signed 2026-11-26): 17M BUILT, 300K BUILT, EXPORT REPRODUCED, RE-CHECKED: con-leche, RE-CHECKED: nanoda
 - Genbox (first finished 2026-11-26, added from their build record): 17M BUILT
