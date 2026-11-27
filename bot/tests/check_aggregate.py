@@ -43,7 +43,7 @@ for w, builds in people.items():
     assert row["machine"] == largest["machine"]["cpu"], (w, row["machine"])
     wholes = sorted((recs[-1] for recs in builds.values() if recs[-1]["whole_proof"]), key=lambda r: r["recorded"])
     assert row["whole_proof"] == bool(wholes) and row["finished"] == (wholes[0]["recorded"] if wholes else None), w
-    assert row["build_hours"] == (round(wholes[0]["busy_seconds"] / 3600, 1) if wholes else None), w
+    assert row["build_hours"] == (round(wholes[0]["busy_seconds"] / 3600, 6) if wholes else None), w
     print(f"  {w}: {row['modules']:,} modules on {row['computers']} computer(s), machine {row['machine']}  ok")
 
 # terrain counts distinct people, not builds

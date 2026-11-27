@@ -624,9 +624,12 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
             kw, kh = ledger_keys(pk)
             if pw:
                 mine[kw] = min(mine.get(kw) or pw[0]["recorded"], pw[0]["recorded"])
-                mine.setdefault(kh, round(pw[0]["busy_seconds"] / 3600, 1))   # as it was when they finished
+                # as it was when they finished; kept exact (owner, 2026-11-27: track it accurately, round only on the page)
+                mine.setdefault(kh, round(pw[0]["busy_seconds"] / 3600, 6))
             proofs[pk] = {"modules": union.bit_count(), "n": P["n"], "whole": bool(pw),
                           "finished": mine[kw] if pw else None, "build_hours": mine[kh] if pw else None,
+                          # exact, for picking the fastest build (build_hours is rounded to 0.1 h: 300K builds tied)
+                          "build_seconds": pw[0]["busy_seconds"] if pw else None,
                           "computers": len(pb), "rank": None,
                           "machine": mach(max(precs, key=lambda r: (r["modules_compiled"], r["recorded"])))}
             if pk == DEFAULT_PROOF:

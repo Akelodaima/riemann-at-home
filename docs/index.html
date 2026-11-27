@@ -101,6 +101,7 @@
   .hr .m{grid-column:3 / 5;color:#b9d0ff;font-size:11px;font-weight:normal}
   .whole{color:#000;background:#ffd23f;font-size:9px;letter-spacing:1px;padding:1px 5px;margin-left:6px;vertical-align:1px}
   .lvl{color:#000;font-size:9px;letter-spacing:1px;padding:1px 5px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+  .fastest{color:#ff6ec7;font-weight:bold}
   .lvl.l2{background:#7dff95}.lvl.l3{background:#7fd8ff}
   /* second proof (CONTRACT "Several proofs", 2026-11-25): per-proof badges, 17M gold and 300K violet */
   .whole.p17{background:#ffd23f}.whole.p3{background:#c9a7ff}.run .whole{margin-left:0;flex:none}
@@ -447,8 +448,8 @@ const prompt = `I'd like to help build the Lean proof of the Riemann Hypothesis 
 Please clone https://github.com/riemann-at-home/riemann-at-home, read its README, and walk me through the volunteer steps:
 "riemann-at-home setup", then "riemann-at-home build".
 Once the build is running, start my local dashboard with "riemann-at-home page" and open http://localhost:8642 in my browser.
-If the whole proof finishes, help me run "riemann-at-home export".
-Ask me before installing anything. During setup, show me the tool's notice about what it posts to GitHub and ask me once; if I agree, it posts my progress on its own from then on, so don't ask me again for each update. Also ask me then whether I want to sign the joint statement if my build finishes and my export matches.`;
+The 300K proof exports itself when its build finishes (about 5 minutes); leave that on. If I build the 17M proof and it finishes, help me run "riemann-at-home export".
+Ask me before installing anything. During setup, show me the tool's notice about what it posts to GitHub and ask me once; if I agree, it posts my progress on its own from then on, so don't ask me again for each update. Setup also shows the joint statement: signing is on by default when my build qualifies, so tell me I can say no then, or withdraw any time with "riemann-at-home sign --cancel".`;
 $("prompt").textContent = prompt;
 $("copy").onclick = () => { navigator.clipboard.writeText(prompt); $("copy").textContent = "COPIED"; setTimeout(() => $("copy").textContent = "COPY", 1500); };
 const hours = h => h == null ? "" : h < 59.5 / 60 ? `${Math.max(1, Math.round(h * 60))} m`   // under an hour: minutes (owner, 2026-11-26)
@@ -545,17 +546,32 @@ const tierOf = p => p.tier || (p.whole_proof ? (has3(p) ? "17m+300k" : "17m") : 
 const B17 = TIERED ? '<span class="whole p17" title="Built the whole original proof (17M)">17M</span>' : '<span class="whole">WHOLE PROOF</span>';
 const B3 = '<span class="whole p3" title="Built the whole 300K proof (grh-lean)">300K</span>';
 const badges = p => (p.whole_proof ? B17 : "") + (TIERED && has3(p) ? B3 : "");
-const facts3 = p => { const k = p3(p), bits = [`300K in ${hours(k.build_hours) || "?"}`];
+// Fastest whole build of each proof, worked out from the data each load (owner, 2026-11-27): that person's time is
+// pink and bold, "fastest 17M build" / "fastest 300K build". A tie on the shown time goes to whoever finished first.
+const fastestOf = (get) => { let best = null;
+  for (const p of DATA.leaderboard || []) { const k = get(p);
+    if (!k || k.build_hours == null) continue;
+    const h = k.build_seconds != null ? k.build_seconds / 3600 : k.build_hours;   // exact seconds when the bot has them
+    if (!best || h < best.h || (h === best.h && String(k.finished) < String(best.f)))
+      best = {who: p.who || p.name, h, f: k.finished}; }
+  return best && best.who; };
+const FAST17 = fastestOf(p => p.whole_proof ? {build_hours: p.proofs?.["17m"]?.build_hours ?? p.build_hours,
+                                               build_seconds: p.proofs?.["17m"]?.build_seconds,
+                                               finished: p.proofs?.["17m"]?.finished ?? p.finished} : null);
+const FAST3 = fastestOf(p => has3(p) ? p3(p) : null);
+const fast = (p, which, text) => (which === "17m" ? FAST17 : FAST3) === (p.who || p.name)
+  ? `<b class="fastest">${text} · fastest ${which === "17m" ? "17M" : "300K"} build</b>` : text;
+const facts3 = p => { const k = p3(p), bits = [fast(p, "300k", `300K in ${hours(k.build_hours) || "?"}`)];
   if (!p.whole_proof && k.machine) bits.push(esc(k.machine));
   return bits.join(" · "); };
 const facts = p => { if (TIERED && !p.whole_proof && has3(p)) {      // 300K only: its own build
     const k = p3(p), bits = [`all ${fmt(k.n || N3)} 300K modules`];
-    if (k.build_hours != null) bits.push(`built in ${hours(k.build_hours)}`);
+    if (k.build_hours != null) bits.push(fast(p, "300k", `built in ${hours(k.build_hours)}`));
     if (k.machine) bits.push(esc(k.machine));
     if (k.computers > 1) bits.push(`${k.computers} computers`);
     return bits.join(" · "); }
   const bits = [`all ${fmt(p.modules)} modules`];
-  if (p.build_hours != null) bits.push(`built in ${hours(p.build_hours)}`);
+  if (p.build_hours != null) bits.push(fast(p, "17m", `built in ${hours(p.build_hours)}`));
   if (p.machine) bits.push(esc(p.machine));
   if (p.computers > 1) bits.push(`${p.computers} computers`);
   if (TIERED && has3(p)) bits.push(facts3(p));
@@ -603,12 +619,12 @@ if (COMPACT && rowsAll.length > TOP) {
   const shown = new Set(rowsAll.slice(0, TOP));
   const cfacts = p => { const k = p3(p), bits = [];
     if (p.whole_proof) {
-      if (p.build_hours != null) bits.push((TIERED && k?.whole ? "17M " : "") + hours(p.build_hours));
+      if (p.build_hours != null) bits.push(fast(p, "17m", (TIERED && k?.whole ? "17M " : "") + hours(p.build_hours)));
       if (p.machine) bits.push(esc(p.machine));
       if (p.export?.done && p.export.matches) bits.push(`export ${dur(p.export.seconds)}`);
-      if (TIERED && k?.whole) bits.push(`300K ${hours(k.build_hours) || "?"}`);
+      if (TIERED && k?.whole) bits.push(fast(p, "300k", `300K ${hours(k.build_hours) || "?"}`));
     } else if (k?.whole) {
-      if (k.build_hours != null) bits.push(hours(k.build_hours)); if (k.machine) bits.push(esc(k.machine)); }
+      if (k.build_hours != null) bits.push(fast(p, "300k", hours(k.build_hours))); if (k.machine) bits.push(esc(k.machine)); }
     return bits.join(" · "); };
   const cRow = it => `<div class="crow${it.v ? "" : " cw"}${it.cls === " k3" ? " k3" : ""}" data-who="${esc(it.p.who || it.p.name)}"><span class="rk">${it.v ? it.rank : ""}</span>` +
     `${avatar(it.p, 30)}<span class="nm">${person(it.p)}</span><span class="bd">${badges(it.p)}${levelBadge(it.p.level)}` +

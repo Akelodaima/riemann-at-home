@@ -197,6 +197,7 @@ print
 print "=== a renamed GitHub account: one row, old-login PRs still accepted (2026-11-26)"
 python3 -I tests/check_renamed.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 python3 -I tests/check_removed.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
+python3 -I tests/check_fastest.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 print
 print "=== aggregate sample (merged + open PRs) + leaderboard/terrain/running assertions"
 S=tests/fixtures/sample

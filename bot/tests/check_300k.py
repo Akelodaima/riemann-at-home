@@ -174,7 +174,7 @@ try:
         check(row["kim"].get("tier") == "300k" and who.index("kim") < who.index("lee"), "kim (300K only) ranks above lee (partial)")
         check(all(row[w].get("tier") == "partial" for w in who[who.index("lee"):]), "partial builds come last")
         k = row["kim"].get("proofs", {}).get("300k", {})
-        check(k.get("whole") is True and k.get("finished") == "2026-11-25T11:10:00Z" and k.get("build_hours") == 1.1
+        check(k.get("whole") is True and k.get("finished") == "2026-11-25T11:10:00Z" and round(k.get("build_hours") or 0, 1) == 1.1
               and k.get("n") == 803 and k.get("rank") == 1, f"kim's proofs.300k: {k}")
         check(row["kim"]["whole_proof"] is False and row["kim"]["modules"] == 0 and "17m" not in row["kim"]["proofs"],
               "17M fields stay about 17M (a 300K-only row has whole_proof false, 0 modules)")

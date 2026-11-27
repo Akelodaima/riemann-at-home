@@ -17,7 +17,9 @@ the original **17M** build. `setup` asks which one to build: 1) the new proof (3
 2) the original (17M, the big challenge), or 3) both (new first). 300K: pinned commit
 `72fead102f663d5c7a407964a13dc0cf9d977207`, Lean 4.35.0, Mathlib `56a00585`, folder macOS
 `/Users/Shared/riemann-at-home/grh`, Linux `/opt/riemann-at-home/grh`; 20 min to 2 h on most computers. A whole 300K
-build whose five theorems use only the three standard axioms is its finish (there is no export step for it yet).
+build whose five theorems use only the three standard axioms is its finish. Its export then runs by itself (about
+5 minutes, nothing written to disk; `--no-export` skips it, `riemann-at-home export --proof 300k` runs it later), and
+earns the 300K EXPORT REPRODUCED badge on the joint statement once three builders' exports agree.
 300K builds are submitted like 17M ones (one pull request per build, the record says `"proof": "300k"`)
 and ranked on the same leaderboard: both proofs first, then 17M, then 300K. Computers already set up for 17M keep working exactly as before (add the new proof with
 `setup --proof 300k`, then `build --proof 300k`).
@@ -26,12 +28,12 @@ and ranked on the same leaderboard: both proofs first, then 17M, then 300K. Comp
 
 Paste this into Claude, ChatGPT, or another assistant that can run commands:
 
-> I'd like to help build the Lean proof of the Riemann hypothesis through Riemann@home. Please clone
-> https://github.com/riemann-at-home/riemann-at-home, read its README, and walk me through the volunteer steps:
+> I'd like to help build the Lean proof of the Riemann Hypothesis through Riemann@home.
+> Please clone https://github.com/riemann-at-home/riemann-at-home, read its README, and walk me through the volunteer steps:
 > "riemann-at-home setup", then "riemann-at-home build".
 > Once the build is running, start my local dashboard with "riemann-at-home page" and open http://localhost:8642 in my browser.
-> If the whole proof finishes, help me run "riemann-at-home export".
-> Ask me before installing anything. During setup, show me the tool's notice about what it posts to GitHub and ask me once; if I agree, it posts my progress on its own from then on, so don't ask me again for each update. Also ask me then whether I want to sign the joint statement if my build finishes and my export matches.
+> The 300K proof exports itself when its build finishes (about 5 minutes); leave that on. If I build the 17M proof and it finishes, help me run "riemann-at-home export".
+> Ask me before installing anything. During setup, show me the tool's notice about what it posts to GitHub and ask me once; if I agree, it posts my progress on its own from then on, so don't ask me again for each update. Setup also shows the joint statement: signing is on by default when my build qualifies, so tell me I can say no then, or withdraw any time with "riemann-at-home sign --cancel".
 
 ## Join by hand
 
@@ -67,7 +69,8 @@ optional export step (7) needs a lot.
    on the leaderboard instead of your GitHub username. It's only a label: your pull request on GitHub always shows
    your username, so nobody here is anonymous.
 6. **See your own build.** `python3 -I cli/riemann-at-home page` opens a local page for this computer.
-7. **Export (Level 2, optional).** When the whole proof is built, run `python3 -I cli/riemann-at-home update`, then
+7. **Export.** 300K: runs by itself right after a whole build (about 5 minutes, 4.5 GB streamed, nothing written to
+   disk); if you skipped it, `python3 -I cli/riemann-at-home export --proof 300k`. 17M (Level 2, optional): when the whole proof is built, run `python3 -I cli/riemann-at-home update`, then
    `python3 -I cli/riemann-at-home export`. It exports the compiled proof (61.6 GB, hashed as it streams, nothing
    written to disk) and checks it is bit for bit the reference export; a match is what lets you sign. It takes 2 to 3
    hours and a lot of memory: it peaks around 145 GB. With 140 GB or more it is comfortable; with 96 to 140 GB it
