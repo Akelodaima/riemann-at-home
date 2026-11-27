@@ -1625,6 +1625,90 @@ class CpuName(unittest.TestCase):
         self.assertEqual(rah.cpu_from_cpuinfo(""), "")
 
 
+class AutoExport300K(Export300K):
+    """The 300K export is the default path after a whole 300K build (owner, 2026-11-27), and finished builds without
+    one are encouraged to run it."""
+    def auto(self, exporter=None):
+        a = types.SimpleNamespace(exporter=str(exporter or self.fake_exporter()), folder=str(self.folder), logs=None,
+                               proof="300k", test_unofficial_folder=True)
+        return rah.auto_export(self.ctx(), a)
+
+    def log(self):
+        return (self.home / "300k/logs/build.log").read_text() if (self.home / "300k/logs/build.log").exists() else ""
+
+    def test_runs_after_a_whole_build_with_the_three_axioms(self):
+        self.build()
+        self.assertEqual(self.auto(), "done")
+        self.assertEqual(self.rec()["export_sha256"], hashlib.sha256(self.OUT).hexdigest())
+        self.assertIn("exporting it now", self.log())
+        self.assertEqual(self.auto(), "")                          # already exported: never again
+
+    def test_not_after_a_partial_build_or_other_axioms(self):
+        self.build(whole=False)
+        self.assertEqual(self.auto(), "")
+        self.build(axioms=FIVE.replace("Quot.sound", "sorryAx"))
+        self.assertEqual(self.auto(), "")
+        self.assertFalse(list((self.home / "300k").glob("records/*.json")) and "export_sha256" in self.rec())
+
+    def test_opt_out_is_respected_and_nudges(self):
+        self.build()
+        self.ctx().set_conf(export_300k_auto=False)
+        self.assertEqual(self.auto(), "opted out")
+        self.assertIn(rah.EXPORT_300K_NUDGE, self.log())
+        self.assertNotIn("export_sha256", json.dumps([json.loads(p.read_text()) for p in
+                                                       (self.home / "300k").glob("records/*.json")]))
+
+    def test_a_failing_export_never_raises(self):
+        self.build()
+        bad = self.tmp / "bad-l4e"; bad.write_text(f"#!{sys.executable} -I\nimport sys\nsys.exit(3)\n"); bad.chmod(0o755)
+        self.assertEqual(self.auto(bad), "failed")
+        self.assertIn("did not finish", self.log()); self.assertIn("riemann-at-home export --proof 300k", self.log())
+
+    def test_status_and_update_encourage_until_exported(self):
+        from unittest import mock
+        self.build()
+        code, out, err = self.main("status")
+        self.assertIn(rah.EXPORT_300K_NUDGE, out)
+        out = self.update()
+        self.assertEqual(out.count(rah.EXPORT_300K_NUDGE), 1)
+        self.export()
+        code, out, err = self.main("status")
+        self.assertNotIn(rah.EXPORT_300K_NUDGE, out)
+        out = self.update()
+        self.assertNotIn(rah.EXPORT_300K_NUDGE, out)
+
+    def update(self):
+        from unittest import mock
+        buf = io.StringIO()
+        with mock.patch.object(rah, "tool_checkout", lambda: "/x"), \
+                mock.patch.object(rah, "check_update", lambda ctx: {"available": False}), contextlib.redirect_stdout(buf):
+            self.assertEqual(rah.cmd_update(self.ctx(), types.SimpleNamespace(yes=True, folder=str(self.folder),
+                                                                              logs=None, proof="300k")), 0)
+        return buf.getvalue()
+
+    def test_wording_names_the_badge_accurately(self):
+        self.assertIn("300K EXPORT REPRODUCED badge", rah.EXPORT_300K_NUDGE)
+        self.assertIn("once three builders' exports agree", rah.EXPORT_300K_NUDGE)
+        self.assertIn("riemann-at-home export --proof 300k", rah.EXPORT_300K_NUDGE)
+        self.assertIn("once three", rah.export_badge_note({"export_sha256": None}))
+        self.assertNotIn("once three", rah.export_badge_note({"export_sha256": "ab" * 32}))
+        self.build()
+        self.assertEqual(self.auto(), "done")
+        self.assertIn("300K EXPORT REPRODUCED badge", self.log())          # said after the automatic export too
+
+    def test_build_no_export_flag_is_stored(self):
+        from unittest import mock
+        self.build()
+        with mock.patch.object(rah, "supervisor", lambda ctx: 4242):
+            code, out, err = self.main("build", "--no-export")
+        self.assertEqual(code, 0, err)
+        self.assertIs(self.ctx().conf().get("export_300k_auto"), False)
+        self.assertIn(rah.EXPORT_300K_NUDGE, out)
+        with mock.patch.object(rah, "supervisor", lambda ctx: 4242):
+            self.main("build", "--export")
+        self.assertIs(self.ctx().conf().get("export_300k_auto"), True)
+
+
 class RealSubmit(unittest.TestCase):
     """The real submit path against a local bare repo as upstream and a fake `gh` (no network, no GitHub)."""
     BID = "0123456789abcdef"

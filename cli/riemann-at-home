@@ -151,7 +151,8 @@ PROOFS = {
 }
 DEFAULT_PROOF = "17m"                 # what a record, a folder or a command means when it does not say
 SHARED_KEYS = ("consent", "display", "submit", "proofs", "repo",    # the person's choices, not one build's
-               "sign_opt_out", "sign_when_done")                  # one joint statement for every proof
+               "sign_opt_out", "sign_when_done",                  # one joint statement for every proof
+               "export_300k_auto")                                # the 300K export after a whole build (default on)
 LEVELS_ONLY_17M = ("recheck is for the 17M proof only: the 300K proof has no reference export yet to re-check. "
                    "Its optional export is `riemann-at-home export --proof 300k`.")
 
@@ -889,6 +890,9 @@ def cmd_setup(ctx: Ctx, a):
     else:
         ctx.set_conf(proofs={"active": order[0], "next": order[1:]})
         nxt = "riemann-at-home build"
+    if getattr(a, "no_export", False):            # opt out of the default 300K export after a whole build
+        ctx.set_conf(export_300k_auto=False)
+        print("the 300K export won't run automatically (you can still run: riemann-at-home export --proof 300k)")
     if getattr(a, "no_sign", False):              # opt out up front: never signed automatically
         for pk in order:
             set_sign_opt_out(Ctx(a, proof=pk), True)
@@ -1122,6 +1126,8 @@ def cmd_update(ctx: Ctx, a):
         raise Fail(f"couldn't check for updates: {r['error']}")
     if not r["available"]:
         print("already up to date")
+        if (nudge := export_nudge(ctx, a)):
+            print(nudge)
         return 0
     print("What changes:")
     for c in r["changes"]:
@@ -1166,6 +1172,8 @@ def cmd_update(ctx: Ctx, a):
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True, env=ctx.env())
         print("local page restarted")
     print("updated")
+    if (nudge := export_nudge(ctx, a)):
+        print(nudge)
     return 0
 
 
@@ -1233,6 +1241,12 @@ def stored_mode(ctx: Ctx) -> str:
 def cmd_build(ctx: Ctx, a):
     mode = "full" if a.full else "gentle" if a.gentle else stored_mode(ctx)
     ctx.logs.mkdir(parents=True, exist_ok=True)
+    if getattr(a, "auto_export", None) is not None:   # --no-export / --export: the 300K export after a whole build
+        ctx.set_conf(export_300k_auto=a.auto_export)
+        print("the 300K export will run automatically when the build is whole" if a.auto_export else
+              "the 300K export won't run automatically (you can still run: riemann-at-home export --proof 300k)")
+        if not a.auto_export and export_300k_pending(ctx):
+            print(EXPORT_300K_NUDGE)
     if getattr(a, "submit", False):           # auto-submit on; a running build picks it up on its next cycle
         need_consent(ctx)
         check_gh(True)
@@ -1441,6 +1455,7 @@ def cmd_run(ctx: Ctx, a):
     if final_submit:
         autosubmit(ctx, a, "final")
     if rc == 0 and target == ctx.p["target"] and not terminated.is_set():
+        auto_export(ctx, a)                       # 300K: export by default once whole (after its final record)
         start_next_proof(ctx)
     ctx.pgid_file.unlink(missing_ok=True)
     ctx.pid_file.unlink(missing_ok=True)
@@ -1464,6 +1479,90 @@ def axiom_check(ctx: Ctx) -> int:
         cmd = [lake, "--no-ansi", "env", "lean", f"--root={audit}", str(audit / "Audit.lean")]
     with open(ctx.logs / "axioms.log", "wb") as f:
         return subprocess.run(cmd, cwd=ctx.folder, stdout=f, stderr=subprocess.STDOUT, env=lean_env()).returncode
+
+
+EXPORT_300K_BADGE = ("which earns the 300K EXPORT REPRODUCED badge on the joint statement once three builders' exports "
+                     "agree")                     # the badge needs a pinned reference (owner, 2026-11-27)
+EXPORT_300K_NUDGE = ("Your 300K build can be exported too (about 5 minutes), " + EXPORT_300K_BADGE +
+                     ": riemann-at-home export --proof 300k")
+
+
+def export_badge_note(p: dict) -> str:
+    """What the 300K export earns, accurately: the badge exists only once a reference is pinned."""
+    return ("A matching export earns the 300K EXPORT REPRODUCED badge on the joint statement." if p.get("export_sha256")
+            else "It earns the 300K EXPORT REPRODUCED badge on the joint statement once three builders' exports agree.")
+AUTO_EXPORT_MIN_RAM_GB, AUTO_EXPORT_MIN_FREE_GB = 8, 2   # 4.5 GB streamed and hashed, nothing written; the exporter
+                                                          # itself is built once into ~/.riemann-at-home/tools
+
+
+def whole_with_axioms(ctx: Ctx) -> bool:
+    """Every module of this proof is compiled and the axiom check printed exactly the three standard axioms."""
+    try:
+        mods = all_modules(ctx.folder)
+        if not mods or not ctx.lib.exists():
+            return False
+        done = compiled_modules(ctx.lib)
+        if any(m not in done for m in mods):
+            return False
+        pa = proof_axioms(ctx, read(ctx.logs / "axioms.log"))
+        return pa is not None and sorted(pa) == sorted(EXPECTED_AXIOMS)
+    except Exception:
+        return False
+
+
+def export_300k_pending(ctx: Ctx) -> bool:
+    """A finished build of a proof without levels (300K) that has no export yet."""
+    return (not ctx.p["levels"] and whole_with_axioms(ctx)
+            and not (levels_state(ctx).get("export") or {}).get("sha256"))
+
+
+def export_nudge(ctx: Ctx, a=None) -> str:
+    """The one-line encouragement for builders who finished 300K before its export existed, or skipped it."""
+    for pk, p in PROOFS.items():
+        if p["levels"]:
+            continue
+        try:
+            c = ctx if ctx.proof == pk else Ctx(argparse.Namespace(folder=None, logs=None), proof=pk)
+            if export_300k_pending(c):
+                return EXPORT_300K_NUDGE if c.p.get("export_sha256") is None else (
+                    "Your 300K build can be exported too (about 5 minutes), which earns the 300K EXPORT REPRODUCED "
+                    "badge on the joint statement: riemann-at-home export --proof 300k")
+        except Exception:
+            continue
+    return ""
+
+
+def auto_export(ctx: Ctx, a) -> str:
+    """The default path after a whole 300K build with the three standard axioms (owner, 2026-11-27): run the export
+    (about 5 minutes) and update the record. Runs after the build's own final record, so it can never cost that;
+    never raises. Returns what happened: "done", "failed", "opted out", "skipped: ..." or "" (not applicable)."""
+    if ctx.p["levels"] or not whole_with_axioms(ctx) or (levels_state(ctx).get("export") or {}).get("sha256"):
+        return ""
+    def note(msg):
+        with open(ctx.logs / "build.log", "a") as f:
+            f.write(f"\nriemann-at-home: {msg}\n")
+    if ctx.conf().get("export_300k_auto") is False:
+        note(f"export skipped (you opted out). {EXPORT_300K_NUDGE}")
+        return "opted out"
+    ram, free = total_ram_gb(), free_gb(ctx.home)
+    if (ram and ram < AUTO_EXPORT_MIN_RAM_GB) or free < AUTO_EXPORT_MIN_FREE_GB:
+        note(f"export not run automatically ({ram:.0f} GB memory, {free:.0f} GB free disk here). {EXPORT_300K_NUDGE}")
+        return "skipped: resources"
+    note(f"the {ctx.p['label']} proof is whole; exporting it now (about 5 minutes, nothing written to disk; "
+         f"turn this off with riemann-at-home build --no-export --proof {ctx.proof})")
+    log_event(ctx, "AUTO_EXPORT_START")
+    ea = argparse.Namespace(**{**vars(a), "fast_exit": True, "parallel": False, "low_memory_ok": False,
+                               "check": False, "exporter": getattr(a, "exporter", None)})
+    try:
+        with open(ctx.logs / "build.log", "a") as f, contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
+            rc = export_without_levels(ctx, ea)
+        log_event(ctx, f"AUTO_EXPORT_EXIT={rc}")
+        note(f"exported (see above). {export_badge_note(ctx.p)}")
+        return "done"
+    except Exception as e:                        # Fail or anything else: one line, the build is unaffected
+        note(f"the automatic export did not finish ({e}); run it yourself: riemann-at-home export --proof {ctx.proof}")
+        log_event(ctx, "AUTO_EXPORT_FAILED")
+        return "failed"
 
 
 def start_next_proof(ctx: Ctx):
@@ -1691,8 +1790,8 @@ def status_one(ctx: Ctx, a):
             print(f"export    sha256 {ex['sha256']}, {ex.get('bytes', 0):,} bytes" + (
                 " (no reference yet: it becomes one once three builders agree)" if ref is None else
                 " (matches the reference)" if ex["sha256"] == ref else " (does not match the reference)"))
-        elif done == n and pa is not None and sorted(pa) == sorted(EXPECTED_AXIOMS):
-            print(f"export    optional: riemann-at-home export --proof {ctx.proof}")
+        elif whole_with_axioms(ctx):
+            print(f"export    not yet. {EXPORT_300K_NUDGE.replace('--proof 300k', '--proof ' + ctx.proof)}")
         if levels_state(ctx).get("sign_statement"):
             print("statement joint statement signed (from this build)")
         elif sign_when_done(ctx):
@@ -3154,6 +3253,7 @@ def export_without_levels(ctx: Ctx, a):
     if ref_sha is None:
         print(f"There is no {ctx.p['label']} reference export yet. Your hash goes on the leaderboard, and it becomes the "
               f"reference once {EXPORT_300K_AGREE} independent builders agree.")
+        print(export_badge_note(ctx.p))
         match = True
     else:
         match = sha == ref_sha and n == ref_bytes
@@ -3785,6 +3885,8 @@ def main(argv=None):
     s.add_argument("--skip-cache", action="store_true", help=argparse.SUPPRESS)
     s.add_argument("--force-cache", action="store_true", help=argparse.SUPPRESS)
     s.add_argument("--source-url", help=argparse.SUPPRESS)        # testing: clone the 300K source from here
+    s.add_argument("--no-export", action="store_true",
+                   help="don't run the 300K export automatically after a whole 300K build (it is on by default)")
     s.add_argument("--no-sign", action="store_true",
                    help="never sign a joint statement automatically (signing is on by default when a build qualifies)")
     for name, h in (("build", "start the official build in the background, or change its speed"),
@@ -3795,6 +3897,11 @@ def main(argv=None):
         g.add_argument("--full", action="store_true", help="all cores (still lowest priority, nice 19)")
         b.add_argument("--target", help=argparse.SUPPRESS)          # default: the proof's own
         b.add_argument("--submit", action="store_true", help="update this build's pull request about every 10 min")
+        xg = b.add_mutually_exclusive_group()
+        xg.add_argument("--no-export", dest="auto_export", action="store_false", default=None,
+                        help="don't run the 300K export automatically when the build is whole (on by default)")
+        xg.add_argument("--export", dest="auto_export", action="store_true",
+                        help="turn the automatic 300K export back on")
         b.add_argument("--submit-repo", help=argparse.SUPPRESS)       # older: dry runs into a given clone
         b.add_argument("--test-unofficial-folder", action="store_true", help=argparse.SUPPRESS)
     sub.add_parser("pause", parents=[hidden], help="freeze the build in place")
