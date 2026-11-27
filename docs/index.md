@@ -8,11 +8,11 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 - Code and instructions: https://github.com/riemann-at-home/riemann-at-home
 - Discuss on Hacker News: https://news.ycombinator.com/item?id=50594006
 - Raw data: https://riemann-at-home.github.io/riemann-at-home/data.json (format: CONTRACT.md in the repository)
-- Updated: 2026-11-27T13:53:08Z
+- Updated: 2026-11-27T14:07:55Z
 
 ## Totals
 
-- Builders: 58
+- Builders: 59
 - Modules built at least once: 175,187 of 175,187 (100.0%)
 - Modules built 3 or more times: 175,187
 - Whole proofs finished (17M): 19
@@ -80,26 +80,27 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 
 ### Building now
 
-- talonius (github.com/talonius): 165,222 of 175,187 17M modules (94.3%), AMD Ryzen 9 9950X3D 16-Core Processor
-- nuwanprabhath (github.com/nuwanprabhath): 159,394 of 175,187 17M modules (91.0%), Intel(R) Core(TM) Ultra 9 285K
-- cardoso-neto (github.com/cardoso-neto): 146,585 of 175,187 17M modules (83.7%), AMD Ryzen 9 5900X 12-Core Processor
-- Russell Land: 111,803 of 175,187 17M modules (63.8%), Intel(R) Xeon(R) Gold 6342 CPU @ 2.80GHz
+- talonius (github.com/talonius): 169,910 of 175,187 17M modules (97.0%), AMD Ryzen 9 9950X3D 16-Core Processor
+- nuwanprabhath (github.com/nuwanprabhath): 160,340 of 175,187 17M modules (91.5%), Intel(R) Core(TM) Ultra 9 285K
+- cardoso-neto (github.com/cardoso-neto): 147,128 of 175,187 17M modules (84.0%), AMD Ryzen 9 5900X 12-Core Processor
+- Russell Land: 114,452 of 175,187 17M modules (65.3%), Intel(R) Xeon(R) Gold 6342 CPU @ 2.80GHz
 - bha: 494 of 803 300K modules (61.5%), 11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz
-- cardoso-neto (github.com/cardoso-neto): 97,245 of 175,187 17M modules (55.5%), AMD Ryzen 7 7700X 8-Core Processor
-- nwinter (github.com/nwinter): 87,592 of 175,187 17M modules (50.0%), Apple M5 Ultra
-- tgragnato (github.com/tgragnato): 84,234 of 175,187 17M modules (48.1%), Intel(R) Celeron(R) J6413 @ 1.80GHz
-- Nico: 195 of 803 300K modules (24.3%), Apple M5
-- Francois Beaune: 31,422 of 175,187 17M modules (17.9%), AMD Ryzen Threadripper 3970X 32-Core Processor
-- Ayake: 24,022 of 175,187 17M modules (13.7%), AMD EPYC 7402 24-Core Processor
-- Stephen Frost: 22,115 of 175,187 17M modules (12.6%), AMD Ryzen AI 7 350 w/ Radeon 860M
+- cardoso-neto (github.com/cardoso-neto): 99,322 of 175,187 17M modules (56.7%), AMD Ryzen 7 7700X 8-Core Processor
+- nwinter (github.com/nwinter): 88,364 of 175,187 17M modules (50.4%), Apple M5 Ultra
+- tgragnato (github.com/tgragnato): 84,363 of 175,187 17M modules (48.2%), Intel(R) Celeron(R) J6413 @ 1.80GHz
+- Nico: 202 of 803 300K modules (25.2%), Apple M5
+- Francois Beaune: 31,504 of 175,187 17M modules (18.0%), AMD Ryzen Threadripper 3970X 32-Core Processor
+- Ayake: 27,877 of 175,187 17M modules (15.9%), AMD EPYC 7402 24-Core Processor
+- Stephen Frost: 23,243 of 175,187 17M modules (13.3%), AMD Ryzen AI 7 350 w/ Radeon 860M
 - framiere (github.com/framiere): 21,921 of 175,187 17M modules (12.5%), Apple M4 Pro
-- jimjones: 16,476 of 175,187 17M modules (9.4%), Apple M2 Pro
+- jimjones: 17,930 of 175,187 17M modules (10.2%), Apple M2 Pro
 - masoud-al (github.com/masoud-al): 15,633 of 175,187 17M modules (8.9%), AMD Ryzen 9 7900X3D 12-Core Processor
-- DenysPiven (github.com/DenysPiven): 12,042 of 175,187 17M modules (6.9%), Apple M4 Pro
+- DenysPiven (github.com/DenysPiven): 12,884 of 175,187 17M modules (7.4%), Apple M4 Pro
 - Aerlinger (github.com/Aerlinger): 3,793 of 175,187 17M modules (2.2%), Apple M5 Pro
 - Akelodaima (github.com/Akelodaima): 771 of 175,187 17M modules (0.4%), Intel(R) Core(TM) Ultra 7 258V
 - Carl Aza: 3 of 803 300K modules (0.4%), Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
 - sergey9295 (github.com/sergey9295): 441 of 175,187 17M modules (0.3%), AMD Ryzen 5 5600X 6-Core Processor
+- james1236 (github.com/james1236): 2 of 803 300K modules (0.2%), AMD Ryzen 5 5600H with Radeon Graphics
 - luvchurchill (github.com/luvchurchill): 1 of 175,187 17M modules (0.0%), Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz
 
 ## Also checked independently by
