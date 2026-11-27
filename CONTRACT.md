@@ -206,6 +206,19 @@ Mathlib's RiemannHypothesis; proved theorem is exactly that statement) are their
   #7fd8ff), then the signatures list (avatar, name, date, machine, badges, "added from their build record" for
   via=record). DOWNLOAD PDF prints the same, numbered, badges in color. Empty state: "No signatures yet."
 
+## 300K export (2026-11-27, optional)
+
+- `riemann-at-home export --proof 300k` on a whole 300K build with the three standard axioms: lean4export v4.35.0
+  (commit `5a9a355d…`), the same 38 export targets, hashed as it streams. The 300K record then carries
+  `export_sha256` (64 hex) and `export_bytes`; the bot accepts any well-formed hash, but only on a whole build.
+  `checkers` stay 17M-only.
+- There is no 300K reference yet (`PROOFS["300k"]["export_sha256"]` is null in the tool and the bot). It is pinned
+  in code once 3 independent builders' hashes agree.
+- data.json `"export_300k"`: `{"reference": sha|null, "agree_needed": 3, "builders": N, "hashes": {sha: [names]}}`,
+  most-agreed hash first. The page shows one line under "The builders so far".
+- With a reference pinned, a builder whose newest 300K export matches it gets the badge kind `"export300k"`
+  ("300K EXPORT REPRODUCED", #b6ff7d) in `"signatures"`, and the badge key gains its line.
+
 ## Export progress (2026-11-22, tool 1.1.0)
 
 - While `riemann-at-home export` runs, records carry `"export_progress"`: `{"bytes": int, "seconds": number,
