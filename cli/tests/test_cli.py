@@ -1321,6 +1321,16 @@ class Parallel(unittest.TestCase):
         self.assertEqual(rah.exporter_name(types.SimpleNamespace()), "lean4export v4.33.0")
 
 
+class FileMax(unittest.TestCase):
+    """Issue #92: a 32-thread 17M build crashed at Linux's fs.file-max of 2,097,152 (each lean maps ~31K files)."""
+    def test_warns_when_the_limit_is_low_for_the_thread_count(self):
+        w = rah.file_max_warning(32, "2097152\n")
+        self.assertIn("2,097,152", w); self.assertIn("sudo sysctl --system", w); self.assertIn("#92", w)
+        self.assertIsNone(rah.file_max_warning(32, "9223372036854775807\n"))
+        self.assertIsNone(rah.file_max_warning(8, "2097152"))             # 8 threads fit
+        self.assertIsNone(rah.file_max_warning(32, ""))                   # not Linux, or unreadable: say nothing
+
+
 class RealSubmit(unittest.TestCase):
     """The real submit path against a local bare repo as upstream and a fake `gh` (no network, no GitHub)."""
     BID = "0123456789abcdef"

@@ -130,6 +130,7 @@ VALIDATED = [
     {"who": "shosonoda (RIKEN)", "what": "lake build, 175,187 of 175,187 modules, 0 failed jobs", "url": "https://github.com/shosonoda/lean-rh-alpoge"},
     {"who": "vincitamore", "what": "lake build of all 175,187 modules, axiom check, kernel replay", "url": "https://github.com/vincitamore/riemann-lean-account"},
     {"who": "starx237", "what": "build plus axiom audit of all five main theorems", "url": "https://github.com/starx237/RH-Lean-Verification"},
+    {"who": "twinheterodox", "what": "build of all 175,187 modules on three workers; export matches the reference sha256; Lean's kernel and nanoda accept", "url": "https://twinheterodox.github.io/rh-verification-monitor/"},
 ]
 
 

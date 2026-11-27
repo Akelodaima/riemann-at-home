@@ -1162,6 +1162,27 @@ def disk_message(ctx: Ctx) -> str:
             "`record` and `submit` still work for what is built.")
 
 
+# Issue #92: each lean worker memory-maps ~31K .olean files, and on Linux every mapping counts against the system-wide
+# fs.file-max even after its descriptor closes. A 32-thread 17M build used 2.1M; at CachyOS's 2,097,152 cap Lean
+# segfaulted and lake aborted. Lake runs one job per hardware thread, so the need grows with the thread count.
+FILES_PER_THREAD = 100_000
+
+
+def file_max_warning(cores: int, file_max_text: str):
+    """A warning (or None) when Linux's system-wide open-file limit is too low for this many parallel lean jobs."""
+    try:
+        file_max = int(file_max_text.strip())
+    except ValueError:
+        return None
+    need = FILES_PER_THREAD * max(1, cores)
+    if file_max >= need:
+        return None
+    return (f"warning: this system allows {file_max:,} open files in all (fs.file-max), and a build on {cores} threads "
+            f"can need about {need:,}: past the limit, Lean crashes (issue #92). To raise it:\n"
+            "  echo 'fs.file-max = 9223372036854775807' | sudo tee /etc/sysctl.d/99-file-max.conf\n"
+            "  sudo sysctl --system")
+
+
 def disk_heads_up(ctx: Ctx) -> None:
     """Said before setup and every build: what the whole thing takes, and what this computer can do."""
     folder = ctx.folder if ctx.folder.exists() else ctx.folder.parent
@@ -1214,6 +1235,10 @@ def cmd_build(ctx: Ctx, a):
     if free_gb(ctx.folder) < MIN_FREE_GB:
         raise Fail(disk_message(ctx))
     disk_heads_up(ctx)
+    if platform.system() == "Linux":
+        warn = file_max_warning(os.cpu_count() or 1, read(Path("/proc/sys/fs/file-max")))
+        if warn:
+            print(warn, file=sys.stderr)
     if a.submit_repo:                         # older, dry-run-only setting
         ctx.set_conf(repo=str(Path(a.submit_repo).expanduser().resolve()))
     ctx.mode_file.write_text(mode)
