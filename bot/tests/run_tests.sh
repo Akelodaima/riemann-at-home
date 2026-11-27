@@ -191,6 +191,9 @@ print
 print "=== the one joint statement: signing on any whole build, one list with badges, opt-out (2026-11-27)"
 python3 -I tests/check_statement.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 print
+print "=== the 300K proof's optional export: hashes gathered, badge only with a pinned reference (2026-11-27)"
+python3 -I tests/check_export300k.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
+print
 print "=== a renamed GitHub account: one row, old-login PRs still accepted (2026-11-26)"
 python3 -I tests/check_renamed.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 python3 -I tests/check_removed.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }

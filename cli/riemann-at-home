@@ -62,6 +62,13 @@ Nat.add Nat.sub Nat.mul Nat.pow Nat.gcd Nat.div Nat.mod Nat.beq Nat.ble Nat.land
 """
 EXPORT_TARGETS_SHA256 = "9eeb2e5e55be4a78f6e4983fc950dba915b45ad8aeb7a02a32341927a89e05e8"
 EXPORT_TARGETS = EXPORT_TARGETS_TXT.split()          # `$(cat export-targets.txt)`: one argument per word
+# The 300K proof's optional export (owner 2026-11-27): the same targets (its five theorems carry the same names, and its
+# axiom audit checks them), exported by lean4export at the release for its Lean, pinned by commit. There is no
+# reference yet: records carry whatever hash a builder got, and one is pinned here once three independent builders agree.
+EXPORTER_300K_TAG = "v4.35.0"
+EXPORTER_300K_COMMIT = "5a9a355dc6c5fd82b69058d433e2ae2e8dfbf8fe"   # what the tag points to (2026-11-27)
+EXPORT_TARGETS_300K = EXPORT_TARGETS
+EXPORT_300K_AGREE = 3                                 # independent builders with one hash before it is pinned
 # First reproduced with this tool 2026-11-23 (5950X, 125 GiB, 2 h 57 m), so a different hash now points at this computer.
 UNVERIFIED = ("other builders have reproduced the reference with this tool, so a different hash means something differs "
               "on this computer: run `riemann-at-home export --check` and `riemann-at-home update`")
@@ -118,6 +125,8 @@ GRH_TREE = "2e133df63d7f4da6b3059c4195324f8e9187ba73"       # its grh/ folder (g
 PROOFS = {
     "17m": {"key": "17m", "label": "17M", "name": "the original proof", "n": N_MODULES,
             "toolchain": TOOLCHAIN, "mathlib_rev": MATHLIB_REV, "folders": FIXED_FOLDERS,
+            "exporter_tag": EXPORTER_TAG, "exporter_commit": EXPORTER_COMMIT, "export_targets": EXPORT_TARGETS,
+            "export_sha256": EXPORT_SHA256, "export_bytes": EXPORT_BYTES,
             "source_field": "archive_sha256", "source": ARCHIVE_SHA256,
             "target": "Main",                 # `lake build Main`
             "theorems": ["riemannHypothesis"],   # whose axioms the record carries (the audit prints all five)
@@ -135,14 +144,16 @@ PROOFS = {
              "audit": "scripts/PrintAxioms.lean",   # its own axiom check; must say exactly AUDIT_LEAN
              "theorems": ["riemannHypothesis", "riemannZeta_eq_zero_re", "LFunction_ne_zero_of_half_lt_re",
                           "LFunction_eq_zero_re", "LFunction_eq_zero_re_of_isPrimitive"],
-             "state": "300k", "levels": False, "whole_gb": 25, "takes": "20 min to 2 h on most computers"},
+             "state": "300k", "levels": False, "whole_gb": 25, "takes": "20 min to 2 h on most computers",
+             # optional export (no Levels): no reference yet, so None; pin sha256 + bytes once builders agree
+             "exporter_tag": EXPORTER_300K_TAG, "exporter_commit": EXPORTER_300K_COMMIT,
+             "export_targets": EXPORT_TARGETS_300K, "export_sha256": None, "export_bytes": None},
 }
 DEFAULT_PROOF = "17m"                 # what a record, a folder or a command means when it does not say
 SHARED_KEYS = ("consent", "display", "submit", "proofs", "repo",    # the person's choices, not one build's
                "sign_opt_out", "sign_when_done")                  # one joint statement for every proof
-LEVELS_ONLY_17M = ("export and recheck are for the 17M proof only: the 300K proof has no reference export yet, "
-                   "so a whole 300K build whose five theorems use only the three standard axioms is its finish "
-                   "(and lets you sign the joint statement: riemann-at-home sign).")
+LEVELS_ONLY_17M = ("recheck is for the 17M proof only: the 300K proof has no reference export yet to re-check. "
+                   "Its optional export is `riemann-at-home export --proof 300k`.")
 
 
 def proof_of_folder(folder: Path):
@@ -1663,8 +1674,16 @@ def status_one(ctx: Ctx, a):
         pa = proof_axioms(ctx, ax) if ax else None
         if done == n and pa is not None:
             print(f"level     whole {ctx.p['label']} proof built" + (", only the three standard axioms: this proof is "
-                  "finished (it has no export step yet)" if sorted(pa) == sorted(EXPECTED_AXIOMS) else
+                  "finished" if sorted(pa) == sorted(EXPECTED_AXIOMS) else
                   f", but the axioms are not the expected {EXPECTED_AXIOMS}"))
+        ex = levels_state(ctx).get("export") or {}
+        ref = ctx.p["export_sha256"]
+        if ex.get("sha256"):
+            print(f"export    sha256 {ex['sha256']}, {ex.get('bytes', 0):,} bytes" + (
+                " (no reference yet: it becomes one once three builders agree)" if ref is None else
+                " (matches the reference)" if ex["sha256"] == ref else " (does not match the reference)"))
+        elif done == n and pa is not None and sorted(pa) == sorted(EXPECTED_AXIOMS):
+            print(f"export    optional: riemann-at-home export --proof {ctx.proof}")
         if levels_state(ctx).get("sign_statement"):
             print("statement joint statement signed (from this build)")
         elif sign_when_done(ctx):
@@ -1857,7 +1876,7 @@ def validate_record(rec: dict):
         return [f"proof {pk!r} is not one of {[k for k in PROOFS if k != DEFAULT_PROOF]} (17M records leave it out)"]
     P, keys = PROOFS[pk], record_keys(pk)
     optional = OPTIONAL_KEYS if P["levels"] else [k for k in OPTIONAL_KEYS if k not in LEVEL_KEYS + PROGRESS_KEYS
-                                                  or k == "sign_statement"]   # 300K: its own statement (issue #76)
+                                                  or k in ("sign_statement", "export_sha256", "export_bytes")]
     extra = [k for k in rec if k not in keys]                  # a set of keys: order does not matter
     if (not set(keys) <= set(rec) or any(k not in optional for k in extra)
             or sum(k in rec for k in NAME_KEYS) > 1):
@@ -1925,8 +1944,11 @@ def validate_levels(rec: dict) -> list:
         if not (rec.get("whole_proof") is True and isinstance(rec.get("axioms"), list)
                 and sorted(rec["axioms"]) == sorted(EXPECTED_AXIOMS)):
             errs.append("export fields need a whole proof with the three standard axioms")
-        if rec.get("export_sha256") != EXPORT_SHA256:
+        P = PROOFS.get(rec.get("proof", DEFAULT_PROOF)) or PROOFS[DEFAULT_PROOF]
+        if P["levels"] and rec.get("export_sha256") != EXPORT_SHA256:
             errs.append("export does not reproduce the reference")
+        elif not re.fullmatch(r"[0-9a-f]{64}", str(rec.get("export_sha256"))):
+            errs.append("export_sha256 must be 64 lowercase hex characters")
         if not (type(rec.get("export_bytes")) is int and rec["export_bytes"] >= 0):
             errs.append("export_bytes must be a non-negative integer")
     if "checkers" in rec:
@@ -2606,7 +2628,10 @@ def level_fields(ctx: Ctx, rec: dict) -> dict:
                 announce_signed(ctx)
             if lv.get("sign_statement") is True:
                 sig = {"sign_statement": True}
-    if not ctx.p["levels"]:
+    if not ctx.p["levels"]:                       # 300K: its optional export's hash, whatever it was
+        ex = (levels_state(ctx, rec["olean_digest"]).get("export") or {})
+        if re.fullmatch(r"[0-9a-f]{64}", str(ex.get("sha256"))) and type(ex.get("bytes")) is int:
+            sig = {**sig, "export_sha256": ex["sha256"], "export_bytes": ex["bytes"]}
         return sig
     out = dict(sig)
     ep = export_progress(ctx, rec["olean_digest"])
@@ -2734,8 +2759,9 @@ def apply_parallel(src: Path):
     par.write_text(patched)
 
 
-def exporter_name(a) -> str:
-    return f"lean4export {EXPORTER_TAG}" + (f" + parallel {PARALLEL_COMMIT[:8]}" if getattr(a, "parallel", False) else "")
+def exporter_name(a, ctx=None) -> str:
+    tag = ctx.p["exporter_tag"] if ctx is not None else EXPORTER_TAG
+    return f"lean4export {tag}" + (f" + parallel {PARALLEL_COMMIT[:8]}" if getattr(a, "parallel", False) else "")
 
 
 def exporter_command(ctx: Ctx, a) -> list:
@@ -2744,33 +2770,35 @@ def exporter_command(ctx: Ctx, a) -> list:
     .olean files written by the same Lean version, so an exporter built with v4.33.0 fails on this v4.33.1 build
     with "incompatible header" (reported 2026-11-22, issue #14). The folder name carries the toolchain, so an
     exporter built the old way is never reused."""
+    P = getattr(ctx, "p", None) or PROOFS[DEFAULT_PROOF]
+    tag, commit, tchain, targets = P["exporter_tag"], P["exporter_commit"], P["toolchain"], P["export_targets"]
     if getattr(a, "exporter", None):                         # testing: a stand-in exporter
-        return [a.exporter, "Main", "--", *EXPORT_TARGETS]
+        return [a.exporter, "Main", "--", *targets]
     parallel = bool(getattr(a, "parallel", False))
     # export's default is on (matched the reference, issue #24); the parallel exporter has its own version of that fix
     fast = bool(getattr(a, "fast_exit", False)) and not parallel
     variant = "-fastexit" if fast else f"-parallel-{PARALLEL_COMMIT[:8]}-forget-v433partial" if parallel else ""
-    src = ctx.home / "tools" / (f"lean4export-{EXPORTER_TAG}-lean-{TOOLCHAIN.rsplit(':', 1)[-1]}"
+    src = ctx.home / "tools" / (f"lean4export-{tag}-lean-{tchain.rsplit(':', 1)[-1]}"
                                 + variant)   # never mixed up with the unpatched build
     exe = src / ".lake/build/bin/lean4export"
     if not exe.exists():
         if not src.exists():
             src.parent.mkdir(parents=True, exist_ok=True)
             tmp = src.with_name(src.name + f".cloning-{os.getpid()}")
-            if run(["git", "clone", "-q", "--depth", "1", "--branch", EXPORTER_TAG, EXPORTER_REPO, tmp]).returncode != 0:
+            if run(["git", "clone", "-q", "--depth", "1", "--branch", tag, EXPORTER_REPO, tmp]).returncode != 0:
                 shutil.rmtree(tmp, ignore_errors=True)
-                raise Fail(f"could not download lean4export {EXPORTER_TAG} from {EXPORTER_REPO}")
+                raise Fail(f"could not download lean4export {tag} from {EXPORTER_REPO}")
             head = run(["git", "-C", tmp, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
-            if head != EXPORTER_COMMIT:
+            if head != commit:
                 shutil.rmtree(tmp, ignore_errors=True)
-                raise Fail(f"lean4export {EXPORTER_TAG} is now commit {head[:12] or '?'}, not the {EXPORTER_COMMIT[:12]} "
+                raise Fail(f"lean4export {tag} is now commit {head[:12] or '?'}, not the {commit[:12]} "
                            "this tool checks against; please report it in the Riemann@home issues")
-            (tmp / "lean-toolchain").write_text(TOOLCHAIN + "\n")    # build with the proof's Lean (see above)
+            (tmp / "lean-toolchain").write_text(tchain + "\n")    # build with the proof's Lean (see above)
             if fast:
                 patched = patch_fast_exit((tmp / "Main.lean").read_text())
                 if patched is None:
                     shutil.rmtree(tmp, ignore_errors=True)
-                    raise Fail(f"lean4export {EXPORTER_TAG}'s Main.lean is not the one the fast exit fits; "
+                    raise Fail(f"lean4export {tag}'s Main.lean is not the one the fast exit fits; "
                                "run export --no-fast-exit")
                 (tmp / "Main.lean").write_text(patched)
             if parallel:
@@ -2781,17 +2809,17 @@ def exporter_command(ctx: Ctx, a) -> list:
                     raise
             tmp.rename(src)
         tc = toolchain_of(src)
-        if tc != TOOLCHAIN:
-            raise Fail(f"{src} pins {tc or 'no toolchain'}, expected {TOOLCHAIN}; delete that folder and run export again")
+        if tc != tchain:
+            raise Fail(f"{src} pins {tc or 'no toolchain'}, expected {tchain}; delete that folder and run export again")
         elan = ensure_elan()
         if not toolchain_installed(elan, tc):
-            print(f"installing {tc} (the proof's toolchain, to build lean4export {EXPORTER_TAG})")
+            print(f"installing {tc} (the proof's toolchain, to build lean4export {tag})")
             if run([elan, "toolchain", "install", tc], env=lean_env()).returncode != 0:
                 raise Fail(f"could not install {tc}")
-        print(f"building lean4export {EXPORTER_TAG} with {tc}")
+        print(f"building lean4export {tag} with {tc}")
         if run([which("lake") or "lake", "build"], cwd=src, env=lean_env()).returncode != 0 or not exe.exists():
             raise Fail(f"building lean4export failed (in {src})")
-    return [which("lake") or "lake", "env", str(exe), "Main", "--", *EXPORT_TARGETS]
+    return [which("lake") or "lake", "env", str(exe), "Main", "--", *targets]
 
 
 EXPORT_CHECK_AFTER = 300        # seconds into a build before the export check runs (some modules are compiled by then)
@@ -2912,13 +2940,15 @@ def export_left(n: int, total: int, out_seconds: float):
     return (total - n) / (n / out_seconds) if n and out_seconds >= EXPORT_ETA_AFTER and n < total else None
 
 
-def stream_export(ctx: Ctx, cmd: list, log: Path, sink=None, on_progress=None) -> tuple:
+def stream_export(ctx: Ctx, cmd: list, log: Path, sink=None, on_progress=None, total=...) -> tuple:
     """Run the exporter in the build folder at nice 19 and read its stdout straight into sha256 and a byte counter
     (and into `sink`, recheck's saved export file, if given). Without a sink nothing is written to disk. -> (exit code, sha256, bytes).
     A reader thread takes whatever output is there (not whole 1 MB pieces), and the progress line, the progress file
     and the leaderboard updates keep ticking every second even while the exporter is silent (a volunteer, 2026-11-23:
     the screen froze at 99.996% because the last 2.4 MB could not show until the exporter exited)."""
     import queue
+    if total is ...:                              # 17M: its reference size (None for a proof without a reference)
+        total = EXPORT_BYTES
     h, n = hashlib.sha256(), 0
     print("  $ " + shlex.join(map(str, cmd)) + f"   (in {ctx.folder}; output hashed"
           + (", saved for the checkers)" if sink is not None else ", not stored)"), file=sys.stderr)
@@ -2944,8 +2974,8 @@ def stream_export(ctx: Ctx, cmd: list, log: Path, sink=None, on_progress=None) -
         el, quiet = now - t0, now - st["last_out"]
         out_el = now - st["first_out"] if st["first_out"] else 0.0   # time since the exporter started writing
         silent = not final and quiet >= EXPORT_QUIET_SECONDS
-        left = export_left(n, EXPORT_BYTES, out_el) if not silent else None
-        pct = min(100, int(n * 100 / EXPORT_BYTES))
+        left = export_left(n, total, out_el) if not silent and total else None
+        pct = min(100, int(n * 100 / total)) if total else int(n // 1e9)   # no reference size: tick per GB
         if on_progress:
             on_progress(n, el, left, st["peak"], final)
         if not tty and not final:                         # logs: one line per percent, one per quiet minute
@@ -2954,8 +2984,9 @@ def stream_export(ctx: Ctx, cmd: list, log: Path, sink=None, on_progress=None) -
                 return
             st["quiet_said"] = qm
         st["pct"], st["next_print"] = pct, now + 1800
-        bar = "█" * (pct * 22 // 100) + "░" * (22 - pct * 22 // 100)
-        line = (f"  EXPORTING {pct}%  {bar}  {n / 1e9:,.1f} of {EXPORT_BYTES / 1e9:,.1f} GB · {n / 1e6 / max(out_el, 1):,.1f} MB/s"
+        bar = "█" * (pct * 22 // 100) + "░" * (22 - pct * 22 // 100) if total else ""
+        size = f"{n / 1e9:,.1f} of {total / 1e9:,.1f} GB" if total else f"{n / 1e9:,.2f} GB so far"
+        line = ((f"  EXPORTING {pct}%  {bar}  " if total else "  EXPORTING  ") + f"{size} · {n / 1e6 / max(out_el, 1):,.1f} MB/s"
                 + (f" · about {fmt_dur(left)} left" if left else "")
                 + (f" · no output for {fmt_dur(quiet)}, the exporter is still running" if silent else "")
                 + (f" · memory {st['peak']:,.0f} GB" if st["peak"] else ""))
@@ -3002,6 +3033,8 @@ def cmd_export(ctx: Ctx, a):
             return 0
         print(f"export check FAILED: {r.get('error')}", file=sys.stderr)
         return 1
+    if not (getattr(ctx, "p", None) or PROOFS[DEFAULT_PROOF])["levels"]:
+        return export_without_levels(ctx, a)
     st = ctx.conf().get("pr") or {}
     rec = whole_build(ctx, a, "export")
     if st.get("build_id") == rec["build_id"] and st.get("final_sent"):
@@ -3081,6 +3114,47 @@ def cmd_export(ctx: Ctx, a):
     if advance:
         share_nudge(ctx, "signed")
     return 0
+
+
+def export_without_levels(ctx: Ctx, a):
+    """The 300K proof's optional export (owner 2026-11-27). Streams + hashes like the 17M one; the record carries the
+    hash either way. With no reference pinned yet, the bot gathers everyone's hashes; once three independent builders
+    agree, that hash is pinned in PROOFS and a match earns the 300K EXPORT REPRODUCED badge."""
+    if getattr(a, "parallel", False):
+        raise Fail("--parallel is for the 17M export only")
+    st = ctx.conf().get("pr") or {}
+    rec = whole_build(ctx, a, "export")
+    if st.get("build_id") == rec["build_id"] and st.get("final_sent"):
+        raise Fail("this build's final record was already sent, so an export result can't reach the leaderboard any "
+                   "more (the bot takes no updates after `finish`)")
+    ref_sha, ref_bytes = ctx.p["export_sha256"], ctx.p["export_bytes"]
+    keep_awake()
+    cmd = exporter_command(ctx, a)
+    ctx.logs.mkdir(parents=True, exist_ok=True)
+    log = ctx.logs / "export.log"
+    print(f"exporting the {ctx.p['label']} proof, hashed as it streams (nothing written to disk)")
+    t0 = time.time()
+    rc, sha, n = stream_export(ctx, cmd, log, total=ref_bytes)
+    if rc != 0:
+        raise Fail(f"the exporter exited with {rc}; see {log}")
+    lv = levels_state(ctx, rec["olean_digest"]) or {"build_id": rec["build_id"], "olean_digest": rec["olean_digest"]}
+    lv = {**lv, "export": {"sha256": sha, "bytes": n, "exporter": exporter_name(a, ctx),
+                           "seconds": int(time.time() - t0), "when": iso(time.time())}}
+    ctx.set_conf(levels=lv)
+    print(f"export sha256 {sha}\nexport bytes  {n:,}\ntook          {fmt_dur(time.time() - t0)}")
+    if ref_sha is None:
+        print(f"There is no {ctx.p['label']} reference export yet. Your hash goes on the leaderboard, and it becomes the "
+              f"reference once {EXPORT_300K_AGREE} independent builders agree.")
+        match = True
+    else:
+        match = sha == ref_sha and n == ref_bytes
+        print(f"export matches the {ctx.p['label']} reference ✓" if match else
+              f"does not match the {ctx.p['label']} reference ({ref_sha}, {ref_bytes:,} bytes): {UNVERIFIED}")
+    out = write_record(ctx, make_record(ctx, a))
+    print(f"record with export_sha256: {out}")
+    if AUTOSUBMIT != "off" and bool((ctx.conf().get("submit") or {}).get("auto")):
+        autosubmit(ctx, a, "export done")
+    return 0 if match else 1
 
 
 def total_ram_gb() -> float:
@@ -3791,7 +3865,7 @@ def main(argv=None):
         if a.proof == "both" and a.cmd != "setup":
             raise Fail("--proof both is for setup only; other commands take --proof 300k or --proof 17m")
         ctx = Ctx(a)
-        if a.cmd in ("export", "recheck") and not ctx.p["levels"]:
+        if a.cmd == "recheck" and not ctx.p["levels"]:
             raise Fail(LEVELS_ONLY_17M + (" (This computer's default is the 300K proof; for the 17M one add --proof 17m.)"
                                           if getattr(a, "proof", None) is None else ""))
         fn = {"setup": cmd_setup, "build": cmd_build, "pause": cmd_pause, "resume": cmd_resume, "stop": cmd_stop,

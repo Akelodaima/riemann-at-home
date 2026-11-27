@@ -112,7 +112,7 @@
   .stview .honor{height:736px}
   /* 300K joint statement (issue #76), under the 17M one */
   .stmt .badgekey{list-style:none;padding-left:0;margin:0 0 8px}.stmt .badgekey li{margin:0 0 6px}
-  .stmt .badgekey .lvl{margin:0 6px 0 0}.lvl.b17{background:#ffd23f}.lvl.b3{background:#ff9ae8}
+  .stmt .badgekey .lvl{margin:0 6px 0 0}.lvl.b17{background:#ffd23f}.lvl.b3{background:#ff9ae8}.lvl.x3{background:#b6ff7d}
   .sig .via{color:#8fa0e8;font-size:10.5px;font-style:italic}
   .signnote{margin:8px 0 0;color:#9fb3e8;font-size:11px;line-height:1.45}
   .sig .via{color:#7f9fdf;font-size:10px;font-style:italic}
@@ -223,7 +223,7 @@
     #printdoc ul.badgekey{list-style:none;padding-left:0;margin:0 0 8pt}#printdoc ul.badgekey li{margin:0 0 6pt}
     #printdoc .lvl{font:bold 7.5pt Arial,sans-serif;letter-spacing:.8pt;padding:1pt 5pt;margin:0 4pt 0 0;display:inline-block;
                    color:#000;border:.5pt solid #000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    #printdoc .lvl.l2{background:#7dff95}#printdoc .lvl.l3{background:#7fd8ff}#printdoc .lvl.b17{background:#ffd23f}#printdoc .lvl.b3{background:#ff9ae8}
+    #printdoc .lvl.l2{background:#7dff95}#printdoc .lvl.l3{background:#7fd8ff}#printdoc .lvl.b17{background:#ffd23f}#printdoc .lvl.b3{background:#ff9ae8}#printdoc .lvl.x3{background:#b6ff7d}
     #printdoc .signnote{font:8.5pt Arial,sans-serif;color:#000;margin-top:8pt}
     #printdoc .sofar{border-top:1px solid #000;margin:12pt 0 0;padding-top:6pt}
     #printdoc .sofar h5{font:bold 12pt Arial,sans-serif;margin:0 0 4pt;color:#000;text-transform:none;letter-spacing:0}
@@ -309,6 +309,7 @@
         <li><span class="lvl b3">300K BUILT</span> compiled all 803 modules of the 300K-line proof of the Riemann Hypothesis and Dirichlet GRH (lsernau/grh-lean at <code>72fead10…7207</code>, Lean 4.35.0).</li>
         <li><span class="lvl l2">EXPORT REPRODUCED</span> exported the compiled 17M proof and reproduced the same raw export file as other independent builders (sha256 <code>5ea74b91…244e</code>).</li>
         <li><span class="lvl l3">RE-CHECKED</span> re-checked that export with an independent checker written separately from Lean's own kernel, named on the badge.</li>
+        <li id="x3key" style="display:none"><span class="lvl x3">300K EXPORT REPRODUCED</span> exported the compiled 300K proof and reproduced the reference export (sha256 <code id="x3sha"></code>).</li>
       </ul>
       <p>We do not certify the mathematics. That the theorems state the Riemann Hypothesis (and Dirichlet GRH) as intended was checked by the Lean and Mathlib communities. Each name is tied to that builder's GitHub account and published build record.</p>
       <p>We join the Lean and Mathlib communities in congratulating Levent Alpöge.</p>
@@ -457,7 +458,11 @@ const date = t => esc(String(t || "").slice(0, 10));
 const levelBadge = lv => lv >= 3 ? '<span class="lvl l3" title="Export reproduced and re-checked with an independent checker">RE-CHECKED</span>'
                        : lv >= 2 ? '<span class="lvl l2" title="Reproduced the reference proof export">EXPORT REPRODUCED</span>' : "";
 // One joint statement (2026-11-27): everyone listed in the order they first finished, each with their badges.
-const BADGE = {"17m": "b17", "300k": "b3", "export": "l2", "recheck": "l3"};
+const BADGE = {"17m": "b17", "300k": "b3", "export": "l2", "recheck": "l3", "export300k": "x3"};
+// The 300K proof's optional export (2026-11-27): its legend line shows only once a reference is pinned.
+{ const x = DATA.export_300k || {};
+  if (x.reference) { $("x3key").style.display = ""; $("x3sha").textContent = `${x.reference.slice(0, 8)}…${x.reference.slice(-4)}`; }
+  else $("x3key").remove(); }
 const badgesOf = g => g.badges || [                     // older data.json (17M signatures only): from the level
   {kind: "17m", label: "17M BUILT"}, ...(g.level >= 2 ? [{kind: "export", label: "EXPORT REPRODUCED"}] : []),
   ...(g.checkers || []).map(c => ({kind: "recheck", label: `RE-CHECKED: ${c}`}))];
@@ -474,7 +479,11 @@ const whenOf = g => g.via === "record" ? `finished ${date(g.first_finished || g.
   $("sofar").innerHTML = `<h5>The builders so far<span class="asof">as of ${asof}</span></h5><ul>` +
     `<li>${y(c[0])} built a whole proof and confirmed the axioms.</li>` +
     `<li>${y(c[1])} reproduced the 17M export.</li>` +
-    `<li>${y(c[2])} also re-checked the export with an independent checker.</li></ul>` +
+    `<li>${y(c[2])} also re-checked the export with an independent checker.</li>` +
+    (() => { const x = DATA.export_300k || {}, h = Object.keys(x.hashes || {}).length;   // export_300k
+             return x.builders ? `<li>${y(x.builders)} exported the 300K proof: ${fmt(h)} distinct hash${h === 1 ? "" : "es"}` +
+               (x.reference ? " (reference pinned)." : `, no reference yet (one is pinned once ${x.agree_needed || 3} builders agree).`) + "</li>" : ""; })() +
+    `</ul>` +
     `<div class="funnel">${labels.map((l, k) => `<span class="fl">${l}</span><span class="ft">` +
       (c[k] ? `<i style="width:${Math.max(1, c[k] / Math.max(1, c[0]) * 100).toFixed(1)}%"></i>` : "") +
       `</span><span class="fc">${fmt(c[k])}</span>`).join("")}</div>`; }

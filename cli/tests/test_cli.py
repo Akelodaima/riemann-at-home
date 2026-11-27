@@ -1493,6 +1493,89 @@ class Sign300K(unittest.TestCase):
         self.assertNotIn("sign_statement", self.rec())
 
 
+class Export300K(Sign300K):
+    """The 300K proof's optional export (owner, 2026-11-27): lean4export v4.35.0 pinned by commit, the record carries
+    the hash either way; no reference yet, so the bot gathers hashes until three builders agree."""
+    OUT = b"{\"meta\": 1}\n" * 500
+
+    def fake_exporter(self, out=None):
+        f = self.tmp / "fake-l4e"
+        f.write_text(f"#!{sys.executable} -I\nimport sys\nsys.stdout.buffer.write({(out or self.OUT)!r})\n")
+        f.chmod(0o755)
+        return f
+
+    def export(self, *extra, out=None):
+        return self.main("export", "--exporter", self.fake_exporter(out), *extra)
+
+    def test_records_the_hash_with_no_reference(self):
+        self.build()
+        code, out, err = self.export()
+        self.assertEqual(code, 0, err)
+        sha = hashlib.sha256(self.OUT).hexdigest()
+        self.assertIn(sha, out); self.assertIn("no 300K reference export yet", out)
+        rec = self.rec()
+        self.assertEqual((rec["export_sha256"], rec["export_bytes"]), (sha, len(self.OUT)))
+        self.assertEqual([e for e in rah.validate_record(rec) if "export" in e or "keys" in e], [])
+        self.assertEqual(rah.record_level(rec), 1)                  # no Levels for 300K: a hash is not Level 2
+        code, out, err = self.main("status")
+        self.assertIn(f"export    sha256 {sha}", out)
+
+    def test_with_a_pinned_reference(self):
+        self.build()
+        sha = hashlib.sha256(self.OUT).hexdigest()
+        with unittest.mock.patch.dict(rah.PROOFS["300k"], {"export_sha256": sha, "export_bytes": len(self.OUT)}):
+            code, out, err = self.export()
+            self.assertEqual(code, 0, err); self.assertIn("matches the 300K reference", out)
+            code, out, err = self.export(out=b"different\n")
+            self.assertEqual(code, 1); self.assertIn("does not match the 300K reference", out)
+            self.assertEqual(self.rec()["export_sha256"], hashlib.sha256(b"different\n").hexdigest())  # still carried
+
+    def test_needs_the_whole_build_and_no_parallel(self):
+        self.build(whole=False)
+        code, out, err = self.export()
+        self.assertEqual(code, 1); self.assertIn("needs the whole build", err)
+        self.build()
+        code, out, err = self.export("--parallel")
+        self.assertEqual(code, 1); self.assertIn("17M export only", err)
+
+    def test_bad_hashes_refused_in_records(self):
+        self.build()
+        self.export()
+        rec = self.rec()
+        self.assertTrue(any("64 lowercase hex" in e for e in rah.validate_record({**rec, "export_sha256": "XYZ"})))
+        part = {**rec, "whole_proof": False, "axioms": None}
+        self.assertTrue(any("whole proof" in e for e in rah.validate_record(part)))
+
+    def test_exporter_is_v4_35_pinned_by_commit(self):
+        from unittest import mock
+        P = rah.PROOFS["300k"]
+        self.assertEqual((P["exporter_tag"], P["exporter_commit"]), ("v4.35.0", "5a9a355dc6c5fd82b69058d433e2ae2e8dfbf8fe"))
+        self.assertEqual(P["export_targets"], rah.EXPORT_TARGETS)
+        self.assertTrue(set(P["theorems"]) <= set(P["export_targets"]))
+        home = Path(tempfile.mkdtemp(dir=TMP)); self.addCleanup(shutil.rmtree, home, True)
+        seen = []
+        def fake_run(cmd, **kw):
+            cmd = list(map(str, cmd)); seen.append(cmd)
+            if "rev-parse" in cmd:
+                return types.SimpleNamespace(returncode=0, stdout=P["exporter_commit"] + "\n")
+            d = Path(cmd[-1]); d.mkdir(parents=True)
+            (d / "Main.lean").write_text(FastExit.MAIN); return types.SimpleNamespace(returncode=0)
+        ctx = types.SimpleNamespace(home=home, p=P)
+        with mock.patch.object(rah, "run", fake_run), mock.patch.object(rah, "ensure_elan", side_effect=rah.Fail("stop")):
+            with self.assertRaises(rah.Fail):
+                rah.exporter_command(ctx, types.SimpleNamespace(exporter=None, fast_exit=True))
+        self.assertIn("v4.35.0", seen[0])
+        [made] = list((home / "tools").iterdir())
+        self.assertEqual(made.name, "lean4export-v4.35.0-lean-v4.35.0-fastexit")
+        self.assertEqual((made / "lean-toolchain").read_text().strip(), P["toolchain"])
+
+    def test_real_v4_35_main_takes_the_fast_exit_if_present(self):
+        p = Path(os.environ.get("RAH_L4E435_MAIN", "/nonexistent"))
+        if not p.exists():
+            self.skipTest("set RAH_L4E435_MAIN to lean4export v4.35.0's Main.lean")
+        self.assertIsNotNone(rah.patch_fast_exit(p.read_text()))
+
+
 class SignDefault17M(unittest.TestCase):
     """17M: default yes at setup; signs when the export first matches; never on a build that already had Level 2;
     never after an opt-out (owner, 2026-11-27). Uses Levels' stand-in exporter without re-running its tests."""
@@ -2095,7 +2178,7 @@ class Proof300K(unittest.TestCase):
         self.assertEqual(rah.validate_record(rec), [])
         for k, v, msg in (("toolchain", rah.TOOLCHAIN, "toolchain"), ("source_commit", "0" * 40, "source_commit"),
                           ("build_folder", "/Users/Shared/riemann-at-home/lean", "fixed folder"),
-                          ("export_sha256", rah.EXPORT_SHA256, "keys"), ("proof", "17m", "proof"), ("proof", "1b", "proof")):
+                          ("export_sha256", rah.EXPORT_SHA256, "export"), ("proof", "17m", "proof"), ("proof", "1b", "proof")):
             self.assertTrue(any(msg in e for e in rah.validate_record({**rec, k: v})), (k, rah.validate_record({**rec, k: v})))
         d = {**rec, "bitmap_b64": rah.encode_bitmap([True] * rah.N_MODULES), "modules_compiled": rah.N_MODULES}
         self.assertTrue(any("bitmap" in e for e in rah.validate_record(d)), "a 17M-sized bitmap is not a 300K one")
@@ -2107,10 +2190,12 @@ class Proof300K(unittest.TestCase):
                                       now=rb.parse_ts("2026-11-26T00:00:00Z"))[0]
             self.assertEqual(rej, [])
 
-    def test_export_recheck_are_17m_only(self):
-        for cmd in (["export"], ["recheck", "--nanoda"]):
-            r = cli(*cmd, "--proof", "300k", home=self.home, check=False)
-            self.assertEqual(r.returncode, 1); self.assertIn("for the 17M proof only", r.stderr)
+    def test_recheck_is_17m_only(self):
+        """300K has an optional export since 2026-11-27, but no reference to re-check yet."""
+        r = cli("recheck", "--nanoda", "--proof", "300k", home=self.home, check=False)
+        self.assertEqual(r.returncode, 1); self.assertIn("for the 17M proof only", r.stderr)
+        r = cli("export", "--proof", "300k", home=self.home, check=False)     # not set up here: it says why
+        self.assertEqual(r.returncode, 1); self.assertNotIn("for the 17M proof only", r.stderr)
         r = cli("build", "--proof", "both", home=self.home, check=False)
         self.assertEqual(r.returncode, 1); self.assertIn("setup only", r.stderr)
 

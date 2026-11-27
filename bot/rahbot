@@ -105,7 +105,8 @@ PROOFS = {
             "modules_txt": MODULES_TXT, "modules_sha256": MODULES_SHA256,
             "source_field": "archive_sha256", "source": ARCHIVE_SHA256,     # the official lean.tar.gz
             "toolchain": TOOLCHAIN, "mathlib_rev": MATHLIB_REV, "build_folders": BUILD_FOLDERS,
-            "axioms": EXPECTED_AXIOMS, "levels": True, "digest_reference": True},
+            "axioms": EXPECTED_AXIOMS, "levels": True, "digest_reference": True,
+            "export_sha256": REF_EXPORT_SHA256, "export_bytes": REF_EXPORT_BYTES},
     # grh-lean (Luke Sernau, Apache-2.0), its readable edition grh/. Source identity = the pinned commit: the CLI
     # clones it, checks HEAD out at exactly this commit and checks that grh/ is tree GRH_TREE before building.
     "300k": {"key": "300k", "label": "300K", "title": "the new proof (grh-lean, readable edition)", "n": 803,
@@ -118,9 +119,13 @@ PROOFS = {
              # depend on together, which must be exactly these three
              "axioms": EXPECTED_AXIOMS,
              "levels": False,              # no Level 2 export reference for 300K yet: a whole build is the finish
-             "digest_reference": False},   # no reference build to compare olean_digest with (off for 17M too)
+             "digest_reference": False,    # no reference build to compare olean_digest with (off for 17M too)
+             # optional export (owner 2026-11-27): records carry any hash; None until three builders agree, then
+             # pinned here (and in the CLI), and a match earns the 300K EXPORT REPRODUCED badge
+             "export_sha256": None, "export_bytes": None},
 }
 DEFAULT_PROOF = "17m"
+EXPORT_300K_AGREE = 3                 # independent builders with one 300K export hash before it is pinned
 SOURCE_FIELDS = {p["source_field"] for p in PROOFS.values()}
 
 
@@ -324,8 +329,8 @@ def check_record(rec, author: str, repo_path: str, prev, check_digest=False, now
         return [f"proof {pk!r} is not one of {sorted(PROOFS)}"], flags, None
     P = PROOFS[pk]
     fields = {**FIELDS, P["source_field"]: str}        # 17M: archive_sha256; 300K: source_commit
-    optional = OPTIONAL if P["levels"] else {k: t for k, t in OPTIONAL.items()
-                                             if k not in LEVEL_FIELDS or k == "sign_statement"}   # 300K statement (#76)
+    optional = OPTIONAL if P["levels"] else {k: t for k, t in OPTIONAL.items() if k not in LEVEL_FIELDS
+                                             or k in ("sign_statement", "export_sha256", "export_bytes")}
     missing = [k for k in fields if k not in rec]
     if "anonymous" in rec:                             # dropped: the pull request always shows the GitHub username
         rej.append("anonymous is not offered: your pull request always shows your GitHub username. "
@@ -407,10 +412,16 @@ def check_record(rec, author: str, repo_path: str, prev, check_digest=False, now
     # levels: export reproduced (2), independent checker accepted it (3); signing needs Level 2+
     if "export_sha256" in rec:
         if not rec["whole_proof"]: rej.append("export_sha256 is only meaningful with whole_proof")
-        if rec["export_sha256"].lower() != REF_EXPORT_SHA256: rej.append("export does not reproduce the reference")
+        if not P["levels"]:                            # 300K: any hash is carried (gathered until builders agree)
+            if not re.fullmatch(r"[0-9a-f]{64}", str(rec["export_sha256"])):
+                rej.append("export_sha256 must be 64 lowercase hex characters")
+        elif str(rec["export_sha256"]).lower() != REF_EXPORT_SHA256: rej.append("export does not reproduce the reference")
     if "export_bytes" in rec:
         if "export_sha256" not in rec: rej.append("export_bytes without export_sha256")
-        if rec["export_bytes"] != REF_EXPORT_BYTES:
+        if not P["levels"]:
+            if isinstance(rec["export_bytes"], int) and rec["export_bytes"] < 0:
+                rej.append("export_bytes must not be negative")
+        elif rec["export_bytes"] != REF_EXPORT_BYTES:
             rej.append(f"export_bytes {rec['export_bytes']:,} is not the reference {REF_EXPORT_BYTES:,}")
     for c in rec.get("checkers") or []:
         if not (isinstance(c, dict) and set(c) == {"name", "version", "result", "seconds"} and isinstance(c["name"], str)
@@ -566,6 +577,7 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
         if old in signed_map:
             t = signed_map.pop(old); signed_map[new] = min(signed_map.get(new) or t, t)
     signatures = []
+    exports_300k = {}                                  # sha256 -> names: the 300K export hashes builders got
     mods = modules()
     people = {}
     for (login, build_id), v in load_accepted(dirs, now=now).items():
@@ -643,6 +655,13 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
         newest_say = max(said, key=lambda r: r["recorded"]) if said else None
         opted_out = canon(who).lower() in OPTOUT or (newest_say is not None and newest_say["sign_statement"] is False)
         own = sorted((r for r in allrecs if r.get("sign_statement") is True and signs_300k(r)), key=lambda r: r["recorded"])
+        P3 = PROOFS["300k"]                            # their newest 300K export, if any
+        x300 = max((v[1] for v in by_proof.get("300k", {}).values() if v[1].get("export_sha256")),
+                   key=lambda r: r["recorded"], default=None)
+        x300_match = bool(x300 and P3["export_sha256"] and x300["export_sha256"] == P3["export_sha256"]
+                          and x300.get("export_bytes") == P3["export_bytes"])
+        if x300:
+            exports_300k.setdefault(x300["export_sha256"], []).append(name)
         built = {pk: sorted((r for r in (v[1] for v in by_proof.get(pk, {}).values()) if signs_300k(r)),
                             key=lambda r: r["recorded"]) for pk in PROOFS}
         if not opted_out and (own or any(built.values())):
@@ -658,6 +677,8 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
             if level >= 2:
                 badges.append({"kind": "export", "label": "EXPORT REPRODUCED"})
             badges += [{"kind": "recheck", "label": f"RE-CHECKED: {c}"} for c in checkers]
+            if x300 and x300_match:
+                badges.append({"kind": "export300k", "label": "300K EXPORT REPRODUCED"})
             e = {"who": shown, "name": name, "first_finished": first, "badges": badges, "level": level,
                  "checkers": checkers, "machine": mach((own or built.get(DEFAULT_PROOF) or built.get("300k"))[0])}
             if own:
@@ -747,6 +768,10 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
         # first to finish comes first, like the leaderboard (one joint statement, 2026-11-27)
         "signatures": sorted(signatures, key=lambda x: (x["first_finished"], x["name"])),
         "validated": VALIDATED,
+        # the 300K proof's optional export: no reference yet; everyone's hash, to see when three builders agree
+        "export_300k": {"reference": PROOFS["300k"]["export_sha256"], "agree_needed": EXPORT_300K_AGREE,
+                        "builders": sum(len(v) for v in exports_300k.values()),
+                        "hashes": {h: sorted(v) for h, v in sorted(exports_300k.items(), key=lambda kv: (-len(kv[1]), kv[0]))}},
         # Lean crashes reported by builds (the tool restarts a crashed build): which module, how often, for whom
         "crashes": sorted(({**c, "codes": sorted(c["codes"]), "names": sorted(c["names"])} for c in crashes.values()),
                           key=lambda c: (-len(c["names"]), -c["times"], c["module"])),
