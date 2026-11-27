@@ -58,9 +58,11 @@ optional export step (7) needs a lot.
    From then on, one public pull request for this computer is updated about every 10 minutes while you build.
    **What becomes public:** your GitHub username, your computer's OS, chip and number of cores, and which modules
    you've built. Nothing is posted until you agree. Stop any time: `submit --disable-auto`.
-   Setup then asks a second, optional question: if your whole build finishes and your export matches the reference,
-   do you want to sign the joint statement? A yes takes effect only on a match. Later: `sign --when-done`;
-   take it back any time: `sign --cancel`.
+   Setup then shows the joint statement (one letter for both proofs, with a badge for each thing you did) and asks
+   whether to sign it when your build qualifies. The answer defaults to yes; it takes effect only when a whole build
+   of yours finishes with only the three standard axioms (17M: when your export matches). Later: `sign --when-done`
+   or `sign`; take it back any time: `sign --cancel`. Builders who finished before signing was on by default were
+   added from their build records; to be removed, run `sign --cancel` or ask in an issue.
 5. **Optional display name.** `riemann-at-home name "Your Name"` (or `submit --agree --name "Your Name"`) shows that
    on the leaderboard instead of your GitHub username. It's only a label: your pull request on GitHub always shows
    your username, so nobody here is anonymous.

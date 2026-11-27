@@ -190,13 +190,21 @@ Mathlib's RiemannHypothesis; proved theorem is exactly that statement) are their
   (nanoda, con-leche, lean4checker, lean4lean). Needs a large-memory machine (nanoda ~100 GB RAM, con-leche ~50 GB).
 - New optional record fields: `"export_sha256"`, `"export_bytes"` (int), `"checkers"`:
   `[{"name": "nanoda", "version": "…", "result": "accept", "seconds": 0}]`, `"sign_statement": true`.
-- `sign_statement` is accepted only at Level 2 or 3. The bot rejects an `export_sha256` that isn't the reference
-  (reason: "export does not reproduce the reference").
-- data.json gets `"signatures"`: `[{"who": login|null, "name": "…", "signed": "…Z", "machine": "…", "level": 2|3,
-  "checkers": ["nanoda"]}]`, ordered by `signed` (time the signing version was accepted). Leaderboard entries get
-  `"level"` (1–3).
-- Page: a "Joint statement" tab beside the leaderboard view: statement text (owner-approved wording, kept in the page),
-  then the signatures list (avatar, name, date, machine, level badges). Empty state: "No signatures yet."
+- One joint statement for every proof (owner, 2026-11-27). `"sign_statement": true` is accepted on any whole record
+  (either proof) whose axioms are exactly the three standard ones; `"sign_statement": false` is an explicit opt-out
+  (`sign --cancel`, `setup --no-sign`), accepted on any record. The bot rejects an `export_sha256` that isn't the
+  reference (reason: "export does not reproduce the reference").
+- data.json `"signatures"`: everyone with a whole build of either proof and only the three standard axioms, unless
+  they opted out (false in their newest record that says either way, or their login in bot/optout.json):
+  `[{"who": login|null, "name": "…", "first_finished": "…Z", "signed": "…Z", "via": "signed"|"record",
+  "badges": [{"kind": "17m"|"300k"|"export"|"recheck", "label": "17M BUILT"|"300K BUILT"|"EXPORT REPRODUCED"|
+  "RE-CHECKED: <checker>"}], "machine": "…", "level": 1|2|3, "checkers": ["nanoda"]}]`, ordered by `first_finished`
+  (their earliest whole build). `via: "signed"` = they signed (signed = time the signing version was accepted);
+  `via: "record"` = listed from their build record (signed = first_finished). Leaderboard entries get `"level"` (1–3).
+- Page: a "Joint statement" tab beside the leaderboard view: the one statement (owner-approved wording, kept in the
+  page) with its colored badge legend (17M BUILT #ffd23f, 300K BUILT #ff9ae8, EXPORT REPRODUCED #7dff95, RE-CHECKED
+  #7fd8ff), then the signatures list (avatar, name, date, machine, badges, "added from their build record" for
+  via=record). DOWNLOAD PDF prints the same, numbered, badges in color. Empty state: "No signatures yet."
 
 ## Export progress (2026-11-22, tool 1.1.0)
 
@@ -231,12 +239,9 @@ Mathlib's RiemannHypothesis; proved theorem is exactly that statement) are their
     `/opt/riemann-at-home/grh`; module list `bot/modules-300k.txt` (src/**/*.lean sorted byte-wise, N = 803, sha256
     `f0b574a8...13d1`). Build: plain `lake build`; axioms: `lake env lean scripts/PrintAxioms.lean`. `whole_proof`
     needs all 803 modules and all five theorems printed; `axioms` = their axioms together, exactly the three.
-  - 300K has no Level 2 reference: `export_*` and `checkers` are rejected on 300K records. Since 2026-11-27 (issue
-    #76) 300K has its own joint statement: `"sign_statement": true` is accepted on a whole 300K record whose
-    axioms are exactly the three standard ones, and `"sign_statement": false` (sign --cancel --proof 300k) is an
-    opt-out. data.json `signatures_300k` lists self-signed builders, and builders with such a whole build who have
-    not opted out, marked `"via": "record"`; opt-out (false in the newest 300K record, or the login in
-    bot/optout.json) always wins.
+  - 300K has no Level 2 reference: `export_*` and `checkers` are rejected on 300K records. Since 2026-11-27 a whole 300K
+    record with the three standard axioms counts for the one joint statement (300K BUILT badge; see "Levels and
+    the joint statement").
     `olean_digest` has no 300K reference either (not checked, like 17M today).
 - Each proof gets its own `build_id` (one PR per build, same path rules). A build cannot switch proofs.
 - Speed: the same rule; with 803 modules and the 10-minute floor it cannot trigger for 300K (needs 300K timings

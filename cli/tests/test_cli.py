@@ -494,17 +494,18 @@ class Fast(unittest.TestCase):
         self.assertEqual(r.returncode, 1); self.assertIn("popcount", r.stderr)
 
 
-STATEMENT = ("Riemann@home: a joint statement from independent builders. We, the undersigned, each built Levent Alpöge's "
-    "Lean proof of the Riemann Hypothesis (released November 20, 2026) on our own computers, from the official archive "
-    "(sha256 9631b4f0…c7fc) with the pinned Lean 4.33.1 and Mathlib. Each signatory: 1. compiled all 175,187 modules "
-    "(lake build Main) without errors, 2. confirmed the final theorem depends only on Lean's three standard axioms "
-    "(propext, Classical.choice, Quot.sound), 3. exported the compiled proof and reproduced the same raw export file as "
-    "other independent builders (sha256 5ea74b91…244e), 4. where noted, re-checked that export with an independent "
-    "checker written separately from Lean's own kernel (nanoda, con-leche, lean4checker or lean4lean), named beside "
-    "that signature. We do not certify the mathematics. That the statement is Mathlib's Riemann Hypothesis, and that the "
-    "proved theorem is exactly that statement, was checked by the Lean and Mathlib communities "
-    "(https://leanprover-community.github.io/blog/posts/riemann-hypothesis/). Each signature is the signer's own report, "
-    "tied to their GitHub account. We join the Lean and Mathlib communities in congratulating Levent Alpöge.")
+STATEMENT = ("Riemann@home: a joint statement from independent builders. We, the undersigned, each built an "
+    "AI-assisted Lean proof of the Riemann Hypothesis on our own computers, from the official sources with the pinned "
+    "Lean toolchain and Mathlib, and confirmed that its main theorems depend only on Lean's three standard axioms "
+    "(propext, Classical.choice, Quot.sound). Each signature carries badges for exactly what that signatory did: "
+    "17M BUILT: compiled all 175,187 modules of Levent Alpöge's proof (released November 20, 2026; archive sha256 "
+    "9631b4f0…c7fc, Lean 4.33.1). 300K BUILT: compiled all 803 modules of the 300K-line proof of the Riemann "
+    "Hypothesis and Dirichlet GRH (lsernau/grh-lean at 72fead10…7207, Lean 4.35.0). EXPORT REPRODUCED: exported the "
+    "compiled 17M proof and reproduced the same raw export file as other independent builders (sha256 5ea74b91…244e). "
+    "RE-CHECKED: re-checked that export with an independent checker written separately from Lean's own kernel, named "
+    "on the badge. We do not certify the mathematics. That the theorems state the Riemann Hypothesis (and Dirichlet "
+    "GRH) as intended was checked by the Lean and Mathlib communities. Each name is tied to that builder's GitHub "
+    "account and published build record. We join the Lean and Mathlib communities in congratulating Levent Alpöge.")
 EXPORT_CHUNK = b'{"marker":"EXPORT-BYTES-MUST-NOT-HIT-DISK"}\n'
 
 
@@ -588,9 +589,12 @@ class Levels(unittest.TestCase):
         code, _, _ = self.main("record", ref=False)
         rec = self.latest_record()
         self.assertNotIn("export_sha256", rec); self.assertEqual(rah.validate_levels(rec), [])
+        # one joint statement since 2026-11-27: a whole build with the three axioms can sign without the export
         code, out, err = self.main("sign", stdin="y\n", ref=False)
-        self.assertEqual(code, 1); self.assertIn("signing needs Level 2", err)
-        self.assertNotIn("sign_statement", self.latest_record())
+        self.assertEqual(code, 0, err)
+        rec = self.latest_record()
+        self.assertIs(rec.get("sign_statement"), True); self.assertNotIn("export_sha256", rec)
+        self.assertEqual(rah.record_level(rec), 1); self.assertEqual(rah.validate_levels(rec), [])
 
     def test_export_progress_shown_and_recorded(self):
         """1.1.0: a live progress line, peak memory, and export_progress in records (the leaderboard's gold bar)."""
@@ -798,7 +802,7 @@ class Levels(unittest.TestCase):
         # and it can be taken back
         code, out, err = self.main("sign", "--cancel")
         self.assertEqual(code, 0, err); self.assertIn("signature withdrawn", out)
-        self.assertNotIn("sign_statement", self.latest_record())
+        self.assertIs(self.latest_record().get("sign_statement"), False)     # the opt-out is in the record
 
     def test_share_nudge_links_back_to_the_site(self):
         """Setup and signing invite a post that links to the site, so others join (owner, 2026-11-23)."""
@@ -991,7 +995,8 @@ class Levels(unittest.TestCase):
         l2 = {**whole, "export_sha256": rah.EXPORT_SHA256, "export_bytes": rah.EXPORT_BYTES}
         l3 = {**l2, "checkers": [{"name": "nanoda", "version": "0.9", "result": "accept", "seconds": 3600}],
               "sign_statement": True, "display_name": "Ada"}
-        for ok, lvl in ((base, 1), (whole, 1), (l2, 2), (l3, 3), ({**l2, "sign_statement": True}, 2)):
+        for ok, lvl in ((base, 1), (whole, 1), (l2, 2), (l3, 3), ({**l2, "sign_statement": True}, 2),
+                        ({**whole, "sign_statement": True}, 1), ({**whole, "sign_statement": False}, 1)):
             self.assertEqual(rah.validate_record(ok), [], ok.keys()); self.assertEqual(rah.record_level(ok), lvl)
         shuffled = dict(reversed(list(l3.items())))                # keys are a set: order does not matter
         self.assertEqual(rah.validate_record(shuffled), [])
@@ -1004,8 +1009,9 @@ class Levels(unittest.TestCase):
                ({**l2, "checkers": [{"name": "nanoda", "result": "accept", "seconds": 1}]}, "checkers must be"),
                ({**l2, "checkers": [{**l3["checkers"][0], "result": "maybe"}]}, "checkers must be"),
                ({**l2, "checkers": l3["checkers"] * 2}, "one entry per checker"),
-               ({**whole, "sign_statement": True}, "sign_statement needs Level 2"),
-               ({**l2, "sign_statement": False}, "must be true"),
+               ({**base, "sign_statement": True}, "three standard axioms"),
+               ({**whole, "axioms": ["propext", "sorryAx"], "sign_statement": True}, "three standard axioms"),
+               ({**l2, "sign_statement": "yes"}, "true or false"),
                ({**l3, "anonymous": True}, "at most one")]
         for rec, msg in bad:
             errs = rah.validate_record(rec)
@@ -1392,11 +1398,32 @@ class Sign300K(unittest.TestCase):
     def sign_errors(self):
         return [e for e in rah.validate_record(self.rec()) if "sign_statement" in e or "keys" in e]
 
-    def test_statement_text_is_the_300k_one(self):
+    def test_sign_without_proof_tries_every_build_and_opt_out_is_shared(self):
+        """One statement: `sign` with no --proof looks at every proof set up here (this one first), and a no on
+        one proof is a no on all of them (sign_opt_out / sign_when_done are shared choices)."""
+        f17, f3 = self.tmp / "f17", self.tmp / "f3"
+        f3.mkdir()                                            # only the 300K build exists here
+        with unittest.mock.patch.object(rah, "fixed_folder", lambda pk: f17 if pk == "17m" else f3):
+            a = types.SimpleNamespace(folder=None, logs=None, proof=None)
+            c17 = rah.Ctx(a, proof="17m")
+            self.assertEqual([c.proof for c in rah.sign_contexts(c17, a)], ["17m", "300k"])
+            f3.rmdir()
+            self.assertEqual([c.proof for c in rah.sign_contexts(c17, a)], ["17m"])
+            self.assertEqual([c.proof for c in rah.sign_contexts(c17, types.SimpleNamespace(**{**vars(a), "proof": "17m"}))], ["17m"])
+            c3 = rah.Ctx(a, proof="300k")
+            rah.set_sign_opt_out(c3, True)
+            self.assertTrue(rah.sign_opted_out(c17))
+            rah.set_sign_when_done(c17)
+            self.assertIsNone(rah.sign_opted_out(c3) or None); self.assertTrue(rah.sign_when_done(c3))
+
+    def test_one_statement_for_both_proofs(self):
+        """2026-11-27: one letter with a badge per thing each signatory did, for 17M and 300K alike."""
         t = rah.statement_text("300k")
-        self.assertTrue(t.startswith("Riemann@home: a joint statement from independent builders of the 300K proof"))
+        self.assertEqual(t, rah.statement_text("17m")); self.assertEqual(t, rah.statement_text())
+        self.assertEqual(t, STATEMENT)
+        for badge in ("17M BUILT", "300K BUILT", "EXPORT REPRODUCED", "RE-CHECKED"):
+            self.assertIn(badge, t)
         self.assertIn("all 803 modules", t); self.assertIn("72fead10", t); self.assertNotIn("—", t)
-        self.assertNotEqual(t, rah.statement_text("17m"))
 
     def test_sign_needs_a_whole_build_with_the_three_axioms(self):
         self.build(whole=False)
@@ -1409,11 +1436,11 @@ class Sign300K(unittest.TestCase):
         code, out, err = self.main("sign", stdin="n\n")
         self.assertEqual(code, 1); self.assertIn("not signed", out)
         code, out, err = self.main("sign", stdin="y\n")
-        self.assertEqual(code, 0, err); self.assertIn("of the 300K proof", out)
+        self.assertEqual(code, 0, err); self.assertIn("Riemann@home: a joint statement from independent builders", out)
         self.assertIs(self.rec().get("sign_statement"), True); self.assertEqual(self.sign_errors(), [])
         self.assertIn(rah.SHARE_TEXT["signed_300k"], out)
         code, out, err = self.main("status")
-        self.assertIn("300K joint statement signed", out)
+        self.assertIn("joint statement signed", out)
 
     def test_cancel_withdraws_and_the_opt_out_persists(self):
         self.build()
@@ -1432,7 +1459,7 @@ class Sign300K(unittest.TestCase):
 
     def test_default_yes_signs_at_the_moment_the_build_qualifies(self):
         out = self.ask("")                                    # Enter
-        self.assertIn("[Y/n]", out); self.assertIn("of the 300K proof", out)
+        self.assertIn("[Y/n]", out); self.assertIn("Riemann@home: a joint statement from independent builders", out)
         self.assertIn(rah.SIGN_DEFAULT_LINE, out)
         self.assertTrue(rah.sign_when_done(self.ctx()))
         self.build(whole=False); self.main("record")
@@ -1440,12 +1467,12 @@ class Sign300K(unittest.TestCase):
         self.build(); code, out, err = self.main("record")
         self.assertEqual(code, 0, err)
         self.assertIs(self.rec().get("sign_statement"), True)
-        self.assertIn("You signed this statement. To withdraw: riemann-at-home sign --cancel --proof 300k", out)
-        self.assertIn("of the 300K proof", out)
+        self.assertIn("You signed this statement. To withdraw: riemann-at-home sign --cancel\n", out)
+        self.assertIn("Riemann@home: a joint statement from independent builders", out)
 
     def test_no_terminal_never_signs(self):
         out = self.ask("y", tty=False)
-        self.assertIn("riemann-at-home sign --when-done --proof 300k", out)
+        self.assertIn("riemann-at-home sign --when-done", out)
         self.assertIsNone(rah.sign_when_done(self.ctx()))
         self.build(whole=False); self.main("record"); self.build(); self.main("record")
         self.assertNotIn("sign_statement", self.rec())
@@ -1497,7 +1524,7 @@ class SignDefault17M(unittest.TestCase):
         self.main("sign", "--cancel")
         self.ask("")                                          # asked again: no, the opt-out stands
         code, out, err = self.main("export", "--exporter", self.exporter)
-        self.assertEqual(code, 0, err); self.assertNotIn("sign_statement", self.latest_record())
+        self.assertEqual(code, 0, err); self.assertIs(self.latest_record().get("sign_statement"), False)
 
     def test_no_terminal_no_yes(self):
         self.ask("y", tty=False)

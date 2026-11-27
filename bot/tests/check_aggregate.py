@@ -86,10 +86,17 @@ want_sig = []
 for w, builds in people.items():
     latest_recs = [recs[-1] for recs in builds.values()]
     assert rows_by[w]["level"] == max(map(lvl, latest_recs)), (w, rows_by[w]["level"])
-    if any(r.get("sign_statement") and lvl(r) >= 2 for r in latest_recs):
+    # one joint statement (2026-11-27): everyone with a whole build and the three standard axioms, unless opted out
+    allr = [r for recs in builds.values() for r in recs]
+    said = [r for r in allr if "sign_statement" in r]
+    out = said and max(said, key=lambda r: r["recorded"])["sign_statement"] is False
+    if not out and any(r.get("whole_proof") and sorted(r.get("axioms") or []) == sorted(["propext", "Classical.choice", "Quot.sound"])
+                       for r in allr):
         want_sig.append(rows_by[w]["name"])
 sigs = data["signatures"]
 assert sorted(s["name"] for s in sigs) == sorted(want_sig), (sigs, want_sig)
-assert [s["signed"] for s in sigs] == sorted(s["signed"] for s in sigs), "signatures ordered by signed"
-assert all(s["level"] >= 2 and set(s) == {"who", "name", "signed", "machine", "level", "checkers"} for s in sigs)
+assert [s["first_finished"] for s in sigs] == sorted(s["first_finished"] for s in sigs), "ordered by first finish"
+assert all(set(s) == {"who", "name", "signed", "first_finished", "badges", "via", "machine", "level", "checkers"}
+           and s["via"] in ("signed", "record") and s["badges"] for s in sigs), sigs
+assert all(s["via"] == "signed" for s in sigs if s["level"] >= 2), "the sample's Level 2+ builders signed"
 print(f"  levels + signatures: {[(s['name'], s['level'], s['signed']) for s in sigs]}  ok")

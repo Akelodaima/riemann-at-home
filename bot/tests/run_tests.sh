@@ -67,7 +67,7 @@ t "export progress without whole"    1 check ${=$(ck export_progress_not_whole)}
 t "export progress, wrong type"      1 check ${=$(ck export_progress_bad)} --author carol --prev none
 t "export progress, self-declared match" 1 check ${=$(ck export_progress_extra)} --author carol --prev none
 t "sign_statement at Level 1"        1 check ${=$(ck sign_level1)} --author lv --prev none
-t "sign_statement, whole but no export" 1 check ${=$(ck sign_whole_no_export)} --author lv --prev none
+t "sign_statement, whole but no export (one statement: ok)" 0 check ${=$(ck sign_whole_no_export)} --author lv --prev none
 t "checkers entry malformed"         1 check ${=$(ck checker_malformed)} --author lv --prev none
 t "a checker rejected the export (accept + loud flag)" 0 check ${=$(ck checker_rejects)} --author lv --prev none
 # several computers per person
@@ -126,8 +126,11 @@ d = json.load(open(sys.argv[1]))
 s = d["signatures"]
 assert json.load(open(sys.argv[2])) == {"carol": "2026-11-20T00:00:00Z"}   # ledger restored from backup in round 7
 # round 8 lost state AND backups: the signed time falls back to the recorded time of the signing record
-assert s == [{"who": "carol", "name": "carol", "signed": "2026-11-19T22:00:00Z", "machine": "AMD Ryzen 9 7950X",
-              "level": 3, "checkers": ["nanoda"]}], s
+assert s == [{"who": "carol", "name": "carol", "first_finished": "2026-11-19T22:00:00Z",
+              "badges": [{"kind": "17m", "label": "17M BUILT"}, {"kind": "export", "label": "EXPORT REPRODUCED"},
+                         {"kind": "recheck", "label": "RE-CHECKED: nanoda"}],
+              "level": 3, "checkers": ["nanoda"], "machine": "AMD Ryzen 9 7950X",
+              "signed": "2026-11-19T22:00:00Z", "via": "signed"}], s
 lv = {r["who"]: r["level"] for r in d["leaderboard"]}
 assert lv["carol"] == 3 and all(v == 1 for k, v in lv.items() if k != "carol"), lv
 print("signatures:", s); print("levels:", lv)' $W/repo/docs/data.json tests/out/signatures-after-round7.json && echo "--> ok   signed = acceptance time (round 1) kept through backup restore; recorded-time fallback after total loss; carol Level 3" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
@@ -185,8 +188,8 @@ print
 print "=== the second proof, 300K: acceptance rules, one leaderboard in tiers, finish times kept (2026-11-25)"
 python3 -I tests/check_300k.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 print
-print "=== the 300K joint statement: signing, listing from build records, opt-out (issue #76)"
-python3 -I tests/check_sign300k.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
+print "=== the one joint statement: signing on any whole build, one list with badges, opt-out (2026-11-27)"
+python3 -I tests/check_statement.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 print
 print "=== a renamed GitHub account: one row, old-login PRs still accepted (2026-11-26)"
 python3 -I tests/check_renamed.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }

@@ -109,13 +109,15 @@
          color:#b9d0ff;border:1px solid #2f5bd8;background:#000}
   .nav a.on{color:#fff;background:linear-gradient(#2f5bd8,#13308f)}
   .global.view-statement .boardview,.global.view-statement .joinview{display:none}
-  .stview .honor{height:502px}
+  .stview .honor{height:736px}
   /* 300K joint statement (issue #76), under the 17M one */
-  .stmt.s300{height:374px}#sigs3{height:374px}
+  .stmt .badgekey{list-style:none;padding-left:0;margin:0 0 8px}.stmt .badgekey li{margin:0 0 6px}
+  .stmt .badgekey .lvl{margin:0 6px 0 0}.lvl.b17{background:#ffd23f}.lvl.b3{background:#ff9ae8}
+  .sig .via{color:#8fa0e8;font-size:10.5px;font-style:italic}
   .signnote{margin:8px 0 0;color:#9fb3e8;font-size:11px;line-height:1.45}
   .sig .via{color:#7f9fdf;font-size:10px;font-style:italic}
   .global .stview{display:none}.global.view-statement .stview{display:block}
-  .stmt{height:604px;overflow-y:auto;padding:6px 12px 8px;color:#dfe7ff;font-weight:normal;font-size:12px;line-height:1.5}
+  .stmt{height:738px;overflow-y:auto;padding:6px 12px 8px;color:#dfe7ff;font-weight:normal;font-size:12px;line-height:1.5}
   .stmt h4{margin:2px 0 6px;color:#ffd23f;font-size:13px;letter-spacing:.3px}
   .stmt p{margin:0 0 7px}.stmt ol{margin:0 0 7px;padding-left:20px}.stmt li{margin-bottom:2px}
   .stmt a{color:#7fd8ff}.stmt code{font-family:"Courier New",monospace;color:#7dff95}
@@ -216,7 +218,13 @@
     #printdoc a{color:#000;text-decoration:none}
     #printdoc a[href^="http"]::after{content:" (" attr(href) ")";font-size:9pt;word-break:break-all}
     #printdoc .sample{font:bold 12pt Arial,sans-serif;border:2px solid #000;padding:4pt 8pt;margin:0 0 12pt;display:inline-block;letter-spacing:2pt}
-    #printdoc .sigs{margin:0;padding-left:20pt}#printdoc .sigs li{margin-bottom:3pt;break-inside:avoid}
+    #printdoc .sigs{margin:0;padding-left:20pt}#printdoc .sigs li{margin-bottom:5pt;break-inside:avoid}
+    #printdoc .sigs .m{font:8.5pt Arial,sans-serif;color:#333}
+    #printdoc ul.badgekey{list-style:none;padding-left:0;margin:0 0 8pt}#printdoc ul.badgekey li{margin:0 0 6pt}
+    #printdoc .lvl{font:bold 7.5pt Arial,sans-serif;letter-spacing:.8pt;padding:1pt 5pt;margin:0 4pt 0 0;display:inline-block;
+                   color:#000;border:.5pt solid #000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    #printdoc .lvl.l2{background:#7dff95}#printdoc .lvl.l3{background:#7fd8ff}#printdoc .lvl.b17{background:#ffd23f}#printdoc .lvl.b3{background:#ff9ae8}
+    #printdoc .signnote{font:8.5pt Arial,sans-serif;color:#000;margin-top:8pt}
     #printdoc .sofar{border-top:1px solid #000;margin:12pt 0 0;padding-top:6pt}
     #printdoc .sofar h5{font:bold 12pt Arial,sans-serif;margin:0 0 4pt;color:#000;text-transform:none;letter-spacing:0}
     #printdoc .sofar h5 .asof{font:9pt Arial,sans-serif;color:#000}
@@ -288,46 +296,28 @@
     <h3>Leaderboard, continued</h3><div id="board2" class="honor"></div></div>
   <div class="extra panel blue boardview alsoview stack" style="left:22px;top:598px;width:956px">
     <h3>Also checked independently</h3><div id="also" class="honor"></div></div>
-  <!-- Joint statement tab (#statement): owner-approved wording, keep exactly -->
-  <div class="extra panel navy stview" style="left:22px;top:598px;width:560px;height:646px">
+  <!-- Joint statement tab (#statement): one letter for every proof, a badge per thing each signatory did
+       (owner-approved mock, 2026-11-27): keep exactly -->
+  <div class="extra panel navy stview" style="left:22px;top:598px;width:560px;height:780px">
     <h3>Joint statement</h3>
     <div class="stmt">
       <h4>Riemann@home: a joint statement from independent builders</h4>
-      <p>We, the undersigned, each built Levent Alpöge's Lean proof of the Riemann Hypothesis (released November 20, 2026) on our own computers, from the official archive (sha256 <code>9631b4f0…c7fc</code>) with the pinned Lean 4.33.1 and Mathlib.</p>
-      <p>Each signatory:</p>
-      <ol>
-        <li>compiled all 175,187 modules (<code>lake build Main</code>) without errors,</li>
-        <li>confirmed the final theorem depends only on Lean's three standard axioms (<code>propext</code>, <code>Classical.choice</code>, <code>Quot.sound</code>),</li>
-        <li>exported the compiled proof and reproduced the same raw export file as other independent builders (sha256 <code>5ea74b91…244e</code>),</li>
-        <li>where noted, re-checked that export with an independent checker written separately from Lean's own kernel (nanoda, con-leche, lean4checker or lean4lean), named beside that signature.</li>
-      </ol>
-      <p>We do not certify the mathematics. That the statement is Mathlib's Riemann Hypothesis, and that the proved theorem is exactly that statement, was checked by the Lean and Mathlib communities (<a href="https://leanprover-community.github.io/blog/posts/riemann-hypothesis/" target="_blank" rel="noopener">their statement</a>). Each signature is the signer's own report, tied to their GitHub account.</p>
+      <p>We, the undersigned, each built an AI-assisted Lean proof of the Riemann Hypothesis on our own computers, from the official sources with the pinned Lean toolchain and Mathlib, and confirmed that its main theorems depend only on Lean's three standard axioms (<code>propext</code>, <code>Classical.choice</code>, <code>Quot.sound</code>).</p>
+      <p>Each signature carries badges for exactly what that signatory did:</p>
+      <ul class="badgekey">
+        <li><span class="lvl b17">17M BUILT</span> compiled all 175,187 modules of Levent Alpöge's proof (released November 20, 2026; archive sha256 <code>9631b4f0…c7fc</code>, Lean 4.33.1).</li>
+        <li><span class="lvl b3">300K BUILT</span> compiled all 803 modules of the 300K-line proof of the Riemann Hypothesis and Dirichlet GRH (lsernau/grh-lean at <code>72fead10…7207</code>, Lean 4.35.0).</li>
+        <li><span class="lvl l2">EXPORT REPRODUCED</span> exported the compiled 17M proof and reproduced the same raw export file as other independent builders (sha256 <code>5ea74b91…244e</code>).</li>
+        <li><span class="lvl l3">RE-CHECKED</span> re-checked that export with an independent checker written separately from Lean's own kernel, named on the badge.</li>
+      </ul>
+      <p>We do not certify the mathematics. That the theorems state the Riemann Hypothesis (and Dirichlet GRH) as intended was checked by the Lean and Mathlib communities. Each name is tied to that builder's GitHub account and published build record.</p>
       <p>We join the Lean and Mathlib communities in congratulating Levent Alpöge.</p>
       <div class="sofar" id="sofar"></div>
-      <p class="signnote">Signing is on by default when your build qualifies; you see the statement first and can withdraw any time with <code>riemann-at-home sign --cancel</code>.</p>
+      <p class="signnote">Signing is on by default when a build qualifies; you see this statement first and can withdraw any time with <code>riemann-at-home sign --cancel</code>. Builders who finished before signing was on by default were added from their build records; to be removed, run that command or ask in an issue.</p>
       <span class="btn" id="pdf" style="margin-left:0" title="Opens the print dialog: choose “Save as PDF”">DOWNLOAD PDF</span>
     </div></div>
-  <div class="extra panel blue stview" style="left:598px;top:598px;width:380px;height:646px">
+  <div class="extra panel blue stview" style="left:598px;top:598px;width:380px;height:780px">
     <h3 id="sighead">Signatures</h3><div id="sigs" class="honor"></div></div>
-  <!-- 300K joint statement (issue #76): its own text and its own list -->
-  <div class="extra panel navy stview" style="left:22px;top:1260px;width:560px;height:416px">
-    <h3>300K joint statement</h3>
-    <div class="stmt s300">
-      <h4>Riemann@home: a joint statement from independent builders of the 300K proof</h4>
-      <p>We, the undersigned, each built the 300K-line Lean proof of the Riemann Hypothesis and Dirichlet GRH (<a href="https://github.com/lsernau/grh-lean" target="_blank" rel="noopener">lsernau/grh-lean</a> at commit <code>72fead10…7207</code>, its readable edition <code>grh/</code>) on our own computers with the pinned Lean 4.35.0 and Mathlib.</p>
-      <p>Each signatory:</p>
-      <ol>
-        <li>compiled all 803 modules without errors,</li>
-        <li>confirmed that the five main theorems depend only on Lean's three standard axioms (<code>propext</code>, <code>Classical.choice</code>, <code>Quot.sound</code>).</li>
-      </ol>
-      <p>This proof has no reference export yet, so this statement does not cover reproducing an export.</p>
-      <p>We do not certify the mathematics: whether the five theorems state the Riemann Hypothesis and Dirichlet GRH as intended is for mathematicians and the Lean community to judge. Each name is tied to that builder's GitHub account and their published build record.</p>
-      <div class="sofar s300"></div>
-      <p class="signnote">Signing is on by default when your build qualifies; you see the statement first and can withdraw any time with <code>riemann-at-home sign --cancel --proof 300k</code>.</p>
-      <p class="signnote">Builders who finished before signing existed were added from their build records; to be removed, run <code>riemann-at-home sign --cancel --proof 300k</code> or ask in an issue.</p>
-    </div></div>
-  <div class="extra panel blue stview" style="left:598px;top:1260px;width:380px;height:416px">
-    <h3 id="sighead3">300K signatures</h3><div id="sigs3" class="honor"></div></div>
 </div>
 <!-- Plain-language explainer for newcomers (owner, 2026-11-22). The bot copies this section into index.md: keep it to
      <h2>, <p>, <a>, <b> so the markdown conversion stays simple. -->
@@ -466,17 +456,24 @@ const nth = k => k + (["th", "st", "nd", "rd"][(k % 100 - 20) % 10] || ["th", "s
 const date = t => esc(String(t || "").slice(0, 10));
 const levelBadge = lv => lv >= 3 ? '<span class="lvl l3" title="Export reproduced and re-checked with an independent checker">RE-CHECKED</span>'
                        : lv >= 2 ? '<span class="lvl l2" title="Reproduced the reference proof export">EXPORT REPRODUCED</span>' : "";
-// Joint statement signatures, in signing order: avatar, name, date, machine, level badges.
-const sigs = (DATA.signatures || []).slice().sort((a, b) => String(a.signed).localeCompare(String(b.signed)));
+// One joint statement (2026-11-27): everyone listed in the order they first finished, each with their badges.
+const BADGE = {"17m": "b17", "300k": "b3", "export": "l2", "recheck": "l3"};
+const badgesOf = g => g.badges || [                     // older data.json (17M signatures only): from the level
+  {kind: "17m", label: "17M BUILT"}, ...(g.level >= 2 ? [{kind: "export", label: "EXPORT REPRODUCED"}] : []),
+  ...(g.checkers || []).map(c => ({kind: "recheck", label: `RE-CHECKED: ${c}`}))];
+const badgeHTML = g => badgesOf(g).map(b => `<span class="lvl ${BADGE[b.kind] || "l2"}">${esc(b.label)}</span>`).join("");
+const sigs = (DATA.signatures || []).slice().sort((a, b) =>
+  String(a.first_finished || a.signed).localeCompare(String(b.first_finished || b.signed)));
+const whenOf = g => g.via === "record" ? `finished ${date(g.first_finished || g.signed)}` : `signed ${date(g.signed)}`;
 // "The builders so far": live counts from data.json (never typed by hand), stamped with data.json's generated time.
-{ const c = [board.filter(p => p.whole_proof).length,                      // whole builds only: partial builders
-             sigs.filter(g => g.level >= 2).length, sigs.filter(g => g.level >= 3).length];   // aren't part of the statement
+{ const c = [board.filter(p => Object.values(p.proofs || {}).some(x => x && x.whole) || p.whole_proof).length,
+             board.filter(p => p.level >= 2).length, board.filter(p => p.level >= 3).length];
   const asof = DATA.generated ? esc(String(DATA.generated).replace("T", " ").replace(/:\d\d(\.\d+)?Z$/, " UTC")) : "unknown";
   const y = n => `<span class="y">${fmt(n)}</span>`;
-  const labels = ["Built the whole proof", "Export reproduced + signed", "Independently re-checked"];
+  const labels = ["Built a whole proof", "Export reproduced", "Independently re-checked"];
   $("sofar").innerHTML = `<h5>The builders so far<span class="asof">as of ${asof}</span></h5><ul>` +
-    `<li>${y(c[0])} built the whole proof and confirmed the axioms.</li>` +
-    `<li>${y(c[1])} reproduced the export and signed this statement.</li>` +
+    `<li>${y(c[0])} built a whole proof and confirmed the axioms.</li>` +
+    `<li>${y(c[1])} reproduced the 17M export.</li>` +
     `<li>${y(c[2])} also re-checked the export with an independent checker.</li></ul>` +
     `<div class="funnel">${labels.map((l, k) => `<span class="fl">${l}</span><span class="ft">` +
       (c[k] ? `<i style="width:${Math.max(1, c[k] / Math.max(1, c[0]) * 100).toFixed(1)}%"></i>` : "") +
@@ -488,30 +485,23 @@ const sigs = (DATA.signatures || []).slice().sort((a, b) => String(a.signed).loc
 $("sighead").textContent = `Signatures${sigs.length ? " · " + sigs.length : ""}`;
 $("sigs").innerHTML = sigs.length ? sigs.map(g =>
     `<div class="sig">${avatar(g, 28)}<div class="body">${person(g, "w")}` +
-    `<div class="meta">signed ${date(g.signed)}${g.machine ? " · " + esc(g.machine) : ""}</div>` +
-    `<div class="badges">${g.level >= 2 ? '<span class="lvl l2">EXPORT REPRODUCED</span>' : ""}` +
-    `${g.level >= 3 ? `<span class="lvl l3">INDEPENDENT RE-CHECK: ${esc((g.checkers || []).join(", ") || "yes")}</span>` : ""}</div></div></div>`).join("")
-  : `<div class="note">No signatures yet.</div>`;
-// 300K statement (issue #76): self-signed people, and finished builders added from their build records (marked)
-{ const s3 = (DATA.signatures_300k || []).slice().sort((a, b) => String(a.signed).localeCompare(String(b.signed)));
-  $("sighead3").textContent = `300K signatures${s3.length ? " · " + s3.length : ""}`;
-  $("sigs3").innerHTML = s3.length ? s3.map(g =>
-      `<div class="sig">${avatar(g, 28)}<div class="body">${person(g, "w")}` +
-      `<div class="meta">${g.via === "record" ? "finished " : "signed "}${date(g.signed)}${g.machine ? " · " + esc(g.machine) : ""}</div>` +
-      (g.via === "record" ? `<div class="via">added from their build record</div>` : "") + `</div></div>`).join("")
-    : `<div class="note">No signatures yet. Run <code>riemann-at-home sign --proof 300k</code> on a finished 300K build.</div>`; }
-// Printable joint statement (no avatars, no external loads): statement text as on the page, links printed as URLs.
-{ const lvlText = g => g.level >= 3 ? `Level 3: export reproduced; independent re-check: ${(g.checkers || []).join(", ") || "yes"}`
-                                    : g.level >= 2 ? "Level 2: export reproduced" : `Level ${g.level ?? "?"}`;
-  const body = document.querySelector(".stmt").cloneNode(true);
+    `<div class="meta">${whenOf(g)}${g.machine ? " · " + esc(g.machine) : ""}</div>` +
+    (g.via === "record" ? `<div class="via">added from their build record</div>` : "") +
+    `<div class="badges">${badgeHTML(g)}</div></div></div>`).join("")
+  : `<div class="note">No signatures yet. Run <code>riemann-at-home sign</code> on a finished build.</div>`;
+// Printable joint statement (no avatars, no external loads): statement text as on the page, badges in color,
+// everyone numbered in the order they first finished; links printed as URLs.
+{ const body = document.querySelector(".stmt").cloneNode(true);
   body.querySelector("#pdf")?.remove(); body.querySelector("#sofar")?.removeAttribute("id");
   const title = body.querySelector("h4"); const h1 = document.createElement("h1"); h1.textContent = title.textContent; title.replaceWith(h1);
   const url = location.href.split("#")[0];
   $("printdoc").innerHTML = (SAMPLE || DEMO ? `<div class="sample">SAMPLE DATA: made-up names, not real signatures</div>` : "") +
     body.innerHTML +
-    `<h2>Signatures (${sigs.length})</h2>` +
-    (sigs.length ? `<ol class="sigs">${sigs.map(g => `<li><b>${esc(nameOf(g))}</b>` +
-        ` · signed ${date(g.signed)}${g.machine ? " · " + esc(g.machine) : ""} · ${esc(lvlText(g))}</li>`).join("")}</ol>`
+    `<h2>Signatures (${sigs.length}), in the order they first finished</h2>` +
+    (sigs.length ? `<ol class="sigs">${sigs.map(g => `<li><b>${esc(nameOf(g))}</b> <span class="m">· ` +
+        `${g.via === "record" ? "first finished " + date(g.first_finished || g.signed) : "signed " + date(g.signed)}` +
+        `${g.machine ? " · " + esc(g.machine) : ""}${g.via === "record" ? " · added from build record" : ""}</span>` +
+        `<br>${badgeHTML(g)}</li>`).join("")}</ol>`
                  : `<p>No signatures yet.</p>`) +
     `<div class="foot">Generated ${new Date().toISOString().slice(0, 10)} from ${esc(url)} · archive sha256 9631b4f0…c7fc · export sha256 5ea74b91…244e</div>`;
   $("pdf").onclick = () => window.print(); }
@@ -704,7 +694,7 @@ function personal(DATA) {
 // Desktop (owner, 2026-11-23): the Leaderboard full width; under it Join in (left) and Building now (right) side by
 // side, ending level: the prompt box stretches to take up any spare room; Also checked independently below both.
 // Nothing scrolls inside a panel; the page grows. The statement tab keeps its fixed layout.
-const SCREEN_H = 1392, STACK_TOP = 598, STACK_GAP = 16, JOIN_W = 470, STATEMENT_H = 1692;   // + the 300K statement
+const SCREEN_H = 1392, STACK_TOP = 598, STACK_GAP = 16, JOIN_W = 470, STATEMENT_H = 1394;   // panels end at 598 + 780
 function fitBoard() {
   if (PHONE()) return;
   if (document.body.classList.contains("view-statement")) { $("screen").style.height = `${STATEMENT_H}px`; return; }
