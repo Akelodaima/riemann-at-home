@@ -8,7 +8,7 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 - Code and instructions: https://github.com/riemann-at-home/riemann-at-home
 - Discuss on Hacker News: https://news.ycombinator.com/item?id=50594006
 - Raw data: https://riemann-at-home.github.io/riemann-at-home/data.json (format: CONTRACT.md in the repository)
-- Updated: 2026-11-27T22:59:17Z
+- Updated: 2026-11-27T23:13:58Z
 
 ## Totals
 
@@ -86,24 +86,24 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 
 ### Building now
 
-- cardoso-neto (github.com/cardoso-neto): 169,981 of 175,187 17M modules (97.0%), AMD Ryzen 9 5900X 12-Core Processor
-- cardoso-neto (github.com/cardoso-neto): 139,055 of 175,187 17M modules (79.4%), AMD Ryzen 7 7700X 8-Core Processor
+- cardoso-neto (github.com/cardoso-neto): 170,936 of 175,187 17M modules (97.6%), AMD Ryzen 9 5900X 12-Core Processor
+- cardoso-neto (github.com/cardoso-neto): 140,865 of 175,187 17M modules (80.4%), AMD Ryzen 7 7700X 8-Core Processor
 - bha: 614 of 803 300K modules (76.5%), 11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz
-- nwinter (github.com/nwinter): 127,975 of 175,187 17M modules (73.1%), Apple M5 Ultra
-- Ayake: 126,848 of 175,187 17M modules (72.4%), AMD EPYC 7402 24-Core Processor
-- masoud-al (github.com/masoud-al): 118,360 of 175,187 17M modules (67.6%), AMD Ryzen 9 7900X3D 12-Core Processor
-- Nico: 452 of 803 300K modules (56.3%), Apple M5
-- tgragnato (github.com/tgragnato): 90,635 of 175,187 17M modules (51.7%), Intel(R) Celeron(R) J6413 @ 1.80GHz
-- oliverweissl (github.com/oliverweissl): 59,689 of 175,187 17M modules (34.1%), AMD EPYC 9354P 32-Core Processor
-- Stephen Frost: 50,232 of 175,187 17M modules (28.7%), AMD Ryzen AI 7 350 w/ Radeon 860M
-- jimjones: 45,549 of 175,187 17M modules (26.0%), Apple M2 Pro
-- matematicaabierta: 203 of 803 300K modules (25.3%), Apple M1
-- Francois Beaune: 38,307 of 175,187 17M modules (21.9%), AMD Ryzen Threadripper 3970X 32-Core Processor
-- DenysPiven (github.com/DenysPiven): 37,179 of 175,187 17M modules (21.2%), Apple M4 Pro
+- nwinter (github.com/nwinter): 129,249 of 175,187 17M modules (73.8%), Apple M5 Ultra
+- Ayake: 128,341 of 175,187 17M modules (73.3%), AMD EPYC 7402 24-Core Processor
+- masoud-al (github.com/masoud-al): 119,828 of 175,187 17M modules (68.4%), AMD Ryzen 9 7900X3D 12-Core Processor
+- Nico: 462 of 803 300K modules (57.5%), Apple M5
+- tgragnato (github.com/tgragnato): 90,719 of 175,187 17M modules (51.8%), Intel(R) Celeron(R) J6413 @ 1.80GHz
+- oliverweissl (github.com/oliverweissl): 66,393 of 175,187 17M modules (37.9%), AMD EPYC 9354P 32-Core Processor
+- Stephen Frost: 51,115 of 175,187 17M modules (29.2%), AMD Ryzen AI 7 350 w/ Radeon 860M
+- matematicaabierta: 211 of 803 300K modules (26.3%), Apple M1
+- jimjones: 45,648 of 175,187 17M modules (26.1%), Apple M2 Pro
+- Francois Beaune: 38,569 of 175,187 17M modules (22.0%), AMD Ryzen Threadripper 3970X 32-Core Processor
+- DenysPiven (github.com/DenysPiven): 37,953 of 175,187 17M modules (21.7%), Apple M4 Pro
 - framiere (github.com/framiere): 21,921 of 175,187 17M modules (12.5%), Apple M4 Pro
-- alvarezjuan (github.com/alvarezjuan): 13,718 of 175,187 17M modules (7.8%), 13th Gen Intel(R) Core(TM) i9-13900H
-- rcland12 (github.com/rcland12): 13,315 of 175,187 17M modules (7.6%), AMD EPYC 7742 64-Core Processor
-- Akelodaima (github.com/Akelodaima): 11,059 of 175,187 17M modules (6.3%), Intel(R) Core(TM) Ultra 7 258V
+- rcland12 (github.com/rcland12): 14,591 of 175,187 17M modules (8.3%), AMD EPYC 7742 64-Core Processor
+- alvarezjuan (github.com/alvarezjuan): 14,334 of 175,187 17M modules (8.2%), 13th Gen Intel(R) Core(TM) i9-13900H
+- Akelodaima (github.com/Akelodaima): 11,123 of 175,187 17M modules (6.3%), Intel(R) Core(TM) Ultra 7 258V
 - Aerlinger (github.com/Aerlinger): 3,793 of 175,187 17M modules (2.2%), Apple M5 Pro
 - Carl Aza: 11 of 803 300K modules (1.4%), Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
 - sergey9295 (github.com/sergey9295): 441 of 175,187 17M modules (0.3%), AMD Ryzen 5 5600X 6-Core Processor
