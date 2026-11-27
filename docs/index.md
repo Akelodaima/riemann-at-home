@@ -8,7 +8,7 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 - Code and instructions: https://github.com/riemann-at-home/riemann-at-home
 - Discuss on Hacker News: https://news.ycombinator.com/item?id=50594006
 - Raw data: https://riemann-at-home.github.io/riemann-at-home/data.json (format: CONTRACT.md in the repository)
-- Updated: 2026-11-27T21:16:05Z
+- Updated: 2026-11-27T21:30:49Z
 
 ## Totals
 
@@ -84,25 +84,26 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 
 ### Building now
 
-- cardoso-neto (github.com/cardoso-neto): 161,979 of 175,187 17M modules (92.5%), AMD Ryzen 9 5900X 12-Core Processor
-- cardoso-neto (github.com/cardoso-neto): 131,212 of 175,187 17M modules (74.9%), AMD Ryzen 7 7700X 8-Core Processor
-- nwinter (github.com/nwinter): 120,323 of 175,187 17M modules (68.7%), Apple M5 Ultra
-- bha: 542 of 803 300K modules (67.5%), 11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz
-- Ayake: 112,048 of 175,187 17M modules (64.0%), AMD EPYC 7402 24-Core Processor
-- masoud-al (github.com/masoud-al): 103,605 of 175,187 17M modules (59.1%), AMD Ryzen 9 7900X3D 12-Core Processor
-- tgragnato (github.com/tgragnato): 89,582 of 175,187 17M modules (51.1%), Intel(R) Celeron(R) J6413 @ 1.80GHz
-- Nico: 372 of 803 300K modules (46.3%), Apple M5
-- jimjones: 45,105 of 175,187 17M modules (25.7%), Apple M2 Pro
-- Stephen Frost: 44,569 of 175,187 17M modules (25.4%), AMD Ryzen AI 7 350 w/ Radeon 860M
+- cardoso-neto (github.com/cardoso-neto): 162,063 of 175,187 17M modules (92.5%), AMD Ryzen 9 5900X 12-Core Processor
+- cardoso-neto (github.com/cardoso-neto): 132,126 of 175,187 17M modules (75.4%), AMD Ryzen 7 7700X 8-Core Processor
+- nwinter (github.com/nwinter): 121,996 of 175,187 17M modules (69.6%), Apple M5 Ultra
+- bha: 554 of 803 300K modules (69.0%), 11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz
+- Ayake: 113,513 of 175,187 17M modules (64.8%), AMD EPYC 7402 24-Core Processor
+- masoud-al (github.com/masoud-al): 105,206 of 175,187 17M modules (60.1%), AMD Ryzen 9 7900X3D 12-Core Processor
+- tgragnato (github.com/tgragnato): 89,703 of 175,187 17M modules (51.2%), Intel(R) Celeron(R) J6413 @ 1.80GHz
+- Nico: 387 of 803 300K modules (48.2%), Apple M5
+- Stephen Frost: 45,541 of 175,187 17M modules (26.0%), AMD Ryzen AI 7 350 w/ Radeon 860M
+- jimjones: 45,162 of 175,187 17M modules (25.8%), Apple M2 Pro
 - matematicaabierta: 203 of 803 300K modules (25.3%), Apple M1
-- Francois Beaune: 37,154 of 175,187 17M modules (21.2%), AMD Ryzen Threadripper 3970X 32-Core Processor
-- DenysPiven (github.com/DenysPiven): 30,260 of 175,187 17M modules (17.3%), Apple M4 Pro
-- oliverweissl (github.com/oliverweissl): 29,112 of 175,187 17M modules (16.6%), AMD EPYC 9354P 32-Core Processor
+- Francois Beaune: 37,491 of 175,187 17M modules (21.4%), AMD Ryzen Threadripper 3970X 32-Core Processor
+- oliverweissl (github.com/oliverweissl): 34,883 of 175,187 17M modules (19.9%), AMD EPYC 9354P 32-Core Processor
+- DenysPiven (github.com/DenysPiven): 31,048 of 175,187 17M modules (17.7%), Apple M4 Pro
 - framiere (github.com/framiere): 21,921 of 175,187 17M modules (12.5%), Apple M4 Pro
-- Akelodaima (github.com/Akelodaima): 8,419 of 175,187 17M modules (4.8%), Intel(R) Core(TM) Ultra 7 258V
-- alvarezjuan (github.com/alvarezjuan): 7,849 of 175,187 17M modules (4.5%), 13th Gen Intel(R) Core(TM) i9-13900H
+- Akelodaima (github.com/Akelodaima): 9,196 of 175,187 17M modules (5.2%), Intel(R) Core(TM) Ultra 7 258V
+- alvarezjuan (github.com/alvarezjuan): 8,971 of 175,187 17M modules (5.1%), 13th Gen Intel(R) Core(TM) i9-13900H
 - Aerlinger (github.com/Aerlinger): 3,793 of 175,187 17M modules (2.2%), Apple M5 Pro
 - Carl Aza: 11 of 803 300K modules (1.4%), Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+- rcland12 (github.com/rcland12): 1,318 of 175,187 17M modules (0.8%), AMD EPYC 7742 64-Core Processor
 - sergey9295 (github.com/sergey9295): 441 of 175,187 17M modules (0.3%), AMD Ryzen 5 5600X 6-Core Processor
 - luvchurchill (github.com/luvchurchill): 1 of 175,187 17M modules (0.0%), Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz
 
@@ -172,7 +173,7 @@ Signatures so far: 53, in the order they first finished.
 - Genbox (first finished 2026-11-26, added from their build record): 17M BUILT
 - signal-11 (first finished 2026-11-26, added from their build record): 300K BUILT
 - jk563 (first finished 2026-11-26, added from their build record): 300K BUILT
-- milhouse1337 (first finished 2026-11-26, added from their build record): 17M BUILT, EXPORT REPRODUCED
+- milhouse1337 (signed 2026-11-27): 17M BUILT, EXPORT REPRODUCED
 - jimjones (first finished 2026-11-26, added from their build record): 300K BUILT
 - tgragnato (first finished 2026-11-26, added from their build record): 300K BUILT
 - ptescher (first finished 2026-11-26, added from their build record): 300K BUILT
