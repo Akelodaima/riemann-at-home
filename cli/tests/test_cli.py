@@ -1615,6 +1615,16 @@ class SignDefault17M(unittest.TestCase):
         self.assertEqual(code, 0, err); self.assertNotIn("sign_statement", self.latest_record())
 
 
+class CpuName(unittest.TestCase):
+    def test_cpu_name_on_x86_power_and_arm(self):
+        self.assertEqual(rah.cpu_from_cpuinfo("processor\t: 0\nmodel name\t: AMD Ryzen 9 5950X\n"), "AMD Ryzen 9 5950X")
+        self.assertEqual(rah.cpu_from_cpuinfo("processor\t: 0\ncpu\t\t: POWER9 (raw), altivec supported\n"),
+                         "POWER9 (raw), altivec supported")
+        self.assertEqual(rah.cpu_from_cpuinfo("Processor\t: ARMv7 Processor rev 4 (v7l)\n"), "ARMv7 Processor rev 4 (v7l)")
+        self.assertEqual(rah.cpu_from_cpuinfo("cpu MHz\t\t: 2400\n"), "")   # "cpu MHz" is not the name
+        self.assertEqual(rah.cpu_from_cpuinfo(""), "")
+
+
 class RealSubmit(unittest.TestCase):
     """The real submit path against a local bare repo as upstream and a fake `gh` (no network, no GitHub)."""
     BID = "0123456789abcdef"

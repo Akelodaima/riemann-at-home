@@ -420,10 +420,19 @@ def machine() -> dict:
     if IS_MAC:
         cpu = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True).stdout.strip()
     else:
-        m = re.search(r"^model name\s*:\s*(.+)$", read(Path("/proc/cpuinfo")), re.M)
-        cpu = m[1].strip() if m else ""
+        cpu = cpu_from_cpuinfo(read(Path("/proc/cpuinfo")))
     return {"os": f"{platform.system()} {platform.release()}", "arch": platform.machine(),
             "cpu": cpu or platform.processor() or "", "cores": int(os.cpu_count() or 0)}
+
+
+def cpu_from_cpuinfo(text: str) -> str:
+    """The CPU name from /proc/cpuinfo: x86 says "model name", POWER says "cpu", some ARM boards "Processor" or
+    "Hardware" (a ppc64le build showed a blank name, 2026-11-27)."""
+    for key in ("model name", "cpu", "Processor", "Hardware"):
+        m = re.search(rf"^{key}\s*:\s*(.+)$", text, re.M)
+        if m and m[1].strip():
+            return m[1].strip()
+    return ""
 
 
 def events(ctx: Ctx) -> list:
