@@ -8,11 +8,11 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 - Code and instructions: https://github.com/riemann-at-home/riemann-at-home
 - Discuss on Hacker News: https://news.ycombinator.com/item?id=50594006
 - Raw data: https://riemann-at-home.github.io/riemann-at-home/data.json (format: CONTRACT.md in the repository)
-- Updated: 2026-11-27T16:35:24Z
+- Updated: 2026-11-27T16:50:02Z
 
 ## Totals
 
-- Builders: 60
+- Builders: 59
 - Modules built at least once: 175,187 of 175,187 (100.0%)
 - Modules built 3 or more times: 175,187
 - Whole proofs finished (17M): 21
@@ -25,7 +25,7 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 1. derek-blanchette (github.com/derek-blanchette): 17M: all 175,187 modules in 18.7 h; 300K: all 803 modules in 0.4 h, AMD Ryzen 9 5950X 16-Core Processor, export reproduced, signed the joint statement
 2. Fornax96 (github.com/Fornax96): 17M: all 175,187 modules in 15.9 h; 300K: all 803 modules in 0.3 h, AMD Ryzen 9 7900X3D 12-Core Processor, export reproduced, signed the joint statement
 3. lupine.sh: 17M: all 175,187 modules in 9.9 h; 300K: all 803 modules in 0.3 h, Lupine CI (INTEL(R) XEON(R) PLATINUM 8562Y+), export reproduced, signed the joint statement
-4. JustinAzoff (github.com/JustinAzoff): 17M: all 175,187 modules in 12.9 h; 300K: all 803 modules in 0.2 h, Oxide Virtual Turin-like Processor, export reproduced
+4. JustinAzoff (github.com/JustinAzoff): 17M: all 175,187 modules in 12.9 h; 300K: all 803 modules in 0.2 h, Oxide Virtual Turin-like Processor, export reproduced, signed the joint statement
 5. apoland (github.com/apoland): 17M: all 175,187 modules in 31.0 h; 300K: all 803 modules in 0.9 h, AMD EPYC (Naples) 32-Core Processor, export reproduced, signed the joint statement
 6. titojankowski (github.com/titojankowski): 17M: all 175,187 modules in 64.3 h; 300K: all 803 modules in 0.2 h, Apple M5 Max, exporting now
 7. dominik-alexander-mueller (github.com/dominik-alexander-mueller): 17M: all 175,187 modules in 94.6 h; 300K: all 803 modules in 1.5 h, Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz, exporting now
@@ -81,23 +81,22 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 
 ### Building now
 
-- Russell Land: 153,885 of 175,187 17M modules (87.8%), Intel(R) Xeon(R) Gold 6342 CPU @ 2.80GHz
-- cardoso-neto (github.com/cardoso-neto): 152,883 of 175,187 17M modules (87.3%), AMD Ryzen 9 5900X 12-Core Processor
-- cardoso-neto (github.com/cardoso-neto): 111,219 of 175,187 17M modules (63.5%), AMD Ryzen 7 7700X 8-Core Processor
+- Russell Land: 156,423 of 175,187 17M modules (89.3%), Intel(R) Xeon(R) Gold 6342 CPU @ 2.80GHz
+- cardoso-neto (github.com/cardoso-neto): 153,082 of 175,187 17M modules (87.4%), AMD Ryzen 9 5900X 12-Core Processor
+- cardoso-neto (github.com/cardoso-neto): 111,920 of 175,187 17M modules (63.9%), AMD Ryzen 7 7700X 8-Core Processor
 - bha: 494 of 803 300K modules (61.5%), 11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz
-- nwinter (github.com/nwinter): 99,856 of 175,187 17M modules (57.0%), Apple M5 Ultra
-- tgragnato (github.com/tgragnato): 86,368 of 175,187 17M modules (49.3%), Intel(R) Celeron(R) J6413 @ 1.80GHz
-- Ayake: 56,652 of 175,187 17M modules (32.3%), AMD EPYC 7402 24-Core Processor
-- masoud-al (github.com/masoud-al): 52,217 of 175,187 17M modules (29.8%), AMD Ryzen 9 7900X3D 12-Core Processor
+- nwinter (github.com/nwinter): 100,583 of 175,187 17M modules (57.4%), Apple M5 Ultra
+- tgragnato (github.com/tgragnato): 86,616 of 175,187 17M modules (49.4%), Intel(R) Celeron(R) J6413 @ 1.80GHz
+- Ayake: 60,818 of 175,187 17M modules (34.7%), AMD EPYC 7402 24-Core Processor
+- masoud-al (github.com/masoud-al): 55,597 of 175,187 17M modules (31.7%), AMD Ryzen 9 7900X3D 12-Core Processor
 - Nico: 212 of 803 300K modules (26.4%), Apple M5
-- Francois Beaune: 33,463 of 175,187 17M modules (19.1%), AMD Ryzen Threadripper 3970X 32-Core Processor
-- jimjones: 28,050 of 175,187 17M modules (16.0%), Apple M2 Pro
+- Francois Beaune: 33,642 of 175,187 17M modules (19.2%), AMD Ryzen Threadripper 3970X 32-Core Processor
+- jimjones: 29,500 of 175,187 17M modules (16.8%), Apple M2 Pro
 - Stephen Frost: 26,457 of 175,187 17M modules (15.1%), AMD Ryzen AI 7 350 w/ Radeon 860M
+- DenysPiven (github.com/DenysPiven): 22,253 of 175,187 17M modules (12.7%), Apple M4 Pro
 - framiere (github.com/framiere): 21,921 of 175,187 17M modules (12.5%), Apple M4 Pro
-- DenysPiven (github.com/DenysPiven): 21,734 of 175,187 17M modules (12.4%), Apple M4 Pro
 - Aerlinger (github.com/Aerlinger): 3,793 of 175,187 17M modules (2.2%), Apple M5 Pro
 - Akelodaima (github.com/Akelodaima): 771 of 175,187 17M modules (0.4%), Intel(R) Core(TM) Ultra 7 258V
-- james1236 (github.com/james1236): 3 of 803 300K modules (0.4%), AMD Ryzen 5 5600H with Radeon Graphics
 - Carl Aza: 3 of 803 300K modules (0.4%), Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
 - sergey9295 (github.com/sergey9295): 441 of 175,187 17M modules (0.3%), AMD Ryzen 5 5600X 6-Core Processor
 - luvchurchill (github.com/luvchurchill): 1 of 175,187 17M modules (0.0%), Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz
@@ -130,30 +129,75 @@ What becomes public: your GitHub username (on the commits and the pull request),
 
 ## Joint statement
 
-We, the undersigned, each built Levent Alpöge's Lean proof of the Riemann Hypothesis (released November 20, 2026) on our own computers, from the official archive (sha256 `9631b4f0…c7fc`) with the pinned Lean 4.33.1 and Mathlib.
+We, the undersigned, each built an AI-assisted Lean proof of the Riemann Hypothesis on our own computers, from the official sources with the pinned Lean toolchain and Mathlib, and confirmed that its main theorems depend only on Lean's three standard axioms (`propext`, `Classical.choice`, `Quot.sound`).
 
-Each signatory:
-1. compiled all 175,187 modules (`lake build Main`) without errors,
-2. confirmed the final theorem depends only on Lean's three standard axioms (`propext`, `Classical.choice`, `Quot.sound`),
-3. exported the compiled proof and reproduced the same raw export file as other independent builders (sha256 `5ea74b91…244e`),
-4. where noted, re-checked that export with an independent checker written separately from Lean's own kernel (nanoda, con-leche, lean4checker or lean4lean), named beside that signature.
+Each signature carries badges for exactly what that signatory did:
 
-We do not certify the mathematics. That the statement is Mathlib's Riemann Hypothesis, and that the proved theorem is exactly that statement, was checked by the Lean and Mathlib communities ([their statement](https://leanprover-community.github.io/blog/posts/riemann-hypothesis/)). Each signature is the signer's own report, tied to their GitHub account.
+- **17M BUILT** compiled all 175,187 modules of Levent Alpöge's proof (released November 20, 2026; archive sha256 `9631b4f0…c7fc`, Lean 4.33.1).
+
+- **300K BUILT** compiled all 803 modules of the 300K-line proof of the Riemann Hypothesis and Dirichlet GRH (lsernau/grh-lean at `72fead10…7207`, Lean 4.35.0).
+
+- **EXPORT REPRODUCED** exported the compiled 17M proof and reproduced the same raw export file as other independent builders (sha256 `5ea74b91…244e`).
+
+- **RE-CHECKED** re-checked that export with an independent checker written separately from Lean's own kernel, named on the badge.
+
+We do not certify the mathematics. That the theorems state the Riemann Hypothesis (and Dirichlet GRH) as intended was checked by the Lean and Mathlib communities. Each name is tied to that builder's GitHub account and published build record.
 
 We join the Lean and Mathlib communities in congratulating Levent Alpöge.
 
-Signatures so far: 11.
-- derek-blanchette, signed 2026-11-23
-- jasonhansel, signed 2026-11-23
-- ericpruitt, signed 2026-11-23
-- Fornax96, signed 2026-11-25
-- rib3ye, signed 2026-11-25
-- gebhardtr, signed 2026-11-25
-- xangma, signed 2026-11-25
-- Andrea Shepard, signed 2026-11-25
-- lupine.sh, signed 2026-11-26
-- sanzgiri, signed 2026-11-27
-- apoland, signed 2026-11-27
+Signatures so far: 50, in the order they first finished.
+- xangma (signed 2026-11-25): 17M BUILT, EXPORT REPRODUCED
+- jasonhansel (signed 2026-11-23): 17M BUILT, EXPORT REPRODUCED, RE-CHECKED: con-leche
+- derek-blanchette (signed 2026-11-23): 17M BUILT, 300K BUILT, EXPORT REPRODUCED
+- ericpruitt (signed 2026-11-23): 17M BUILT, EXPORT REPRODUCED
+- rib3ye (signed 2026-11-25): 17M BUILT, EXPORT REPRODUCED
+- Fornax96 (signed 2026-11-25): 17M BUILT, 300K BUILT, EXPORT REPRODUCED
+- titojankowski (first finished 2026-11-24, added from their build record): 17M BUILT, 300K BUILT
+- Ununhexium (first finished 2026-11-24, added from their build record): 17M BUILT
+- sanzgiri (signed 2026-11-27): 17M BUILT, EXPORT REPRODUCED
+- gebhardtr (signed 2026-11-25): 17M BUILT, EXPORT REPRODUCED
+- Andrea Shepard (signed 2026-11-25): 17M BUILT, EXPORT REPRODUCED
+- VoX (first finished 2026-11-26, added from their build record): 300K BUILT
+- dominik-alexander-mueller (first finished 2026-11-26, added from their build record): 17M BUILT, 300K BUILT
+- talonius (first finished 2026-11-26, added from their build record): 17M BUILT, 300K BUILT
+- apoland (signed 2026-11-27): 17M BUILT, 300K BUILT, EXPORT REPRODUCED
+- cardoso-neto (first finished 2026-11-26, added from their build record): 300K BUILT
+- lupine.sh (signed 2026-11-26): 17M BUILT, 300K BUILT, EXPORT REPRODUCED, RE-CHECKED: con-leche, RE-CHECKED: nanoda
+- Genbox (first finished 2026-11-26, added from their build record): 17M BUILT
+- signal-11 (first finished 2026-11-26, added from their build record): 300K BUILT
+- jk563 (first finished 2026-11-26, added from their build record): 300K BUILT
+- milhouse1337 (first finished 2026-11-26, added from their build record): 17M BUILT
+- jimjones (first finished 2026-11-26, added from their build record): 300K BUILT
+- tgragnato (first finished 2026-11-26, added from their build record): 300K BUILT
+- ptescher (first finished 2026-11-26, added from their build record): 300K BUILT
+- janfrode (first finished 2026-11-26, added from their build record): 300K BUILT
+- RealMonk (first finished 2026-11-26, added from their build record): 300K BUILT
+- nuwanprabhath (first finished 2026-11-26, added from their build record): 17M BUILT, 300K BUILT
+- dhoeppne (first finished 2026-11-26, added from their build record): 17M BUILT, 300K BUILT
+- gero-stack (first finished 2026-11-26, added from their build record): 300K BUILT
+- nwinter (first finished 2026-11-26, added from their build record): 300K BUILT
+- ksdme (first finished 2026-11-26, added from their build record): 300K BUILT
+- Connell McGinley (first finished 2026-11-26, added from their build record): 300K BUILT
+- ic (first finished 2026-11-26, added from their build record): 300K BUILT
+- bendian64 (first finished 2026-11-26, added from their build record): 17M BUILT, 300K BUILT
+- JustinAzoff (first finished 2026-11-26, added from their build record): 17M BUILT, 300K BUILT, EXPORT REPRODUCED
+- yum-food (first finished 2026-11-26, added from their build record): 300K BUILT
+- Francois Beaune (first finished 2026-11-26, added from their build record): 300K BUILT
+- Xuarig (first finished 2026-11-27, added from their build record): 300K BUILT
+- Nacholmo (first finished 2026-11-27, added from their build record): 300K BUILT
+- mazne (first finished 2026-11-27, added from their build record): 300K BUILT
+- wool-worm (first finished 2026-11-27, added from their build record): 300K BUILT
+- IbnouT (first finished 2026-11-27, added from their build record): 300K BUILT
+- Russell Land (first finished 2026-11-27, added from their build record): 300K BUILT
+- Akelodaima (first finished 2026-11-27, added from their build record): 300K BUILT
+- DenysPiven (first finished 2026-11-27, added from their build record): 300K BUILT
+- masoud-al (first finished 2026-11-27, added from their build record): 300K BUILT
+- Ayake (first finished 2026-11-27, added from their build record): 300K BUILT
+- FlorianPicca (first finished 2026-11-27, added from their build record): 300K BUILT
+- kazwoot (first finished 2026-11-27, added from their build record): 300K BUILT
+- karimbacchus (first finished 2026-11-27, added from their build record): 300K BUILT
+
+Signing is on by default when a build qualifies; withdraw any time with `riemann-at-home sign --cancel`, or ask in an issue to be removed.
 
 ## I’m totally confused what this website is 😭
 
