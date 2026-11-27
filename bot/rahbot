@@ -39,6 +39,9 @@ HERE = Path(__file__).resolve().parent
 # one leaderboard row, and updates from the old PRs are still accepted. Added on the person's own request.
 # People who asked (by comment) not to be listed on the 300K statement: GitHub logins, lowercase (issue #76)
 OPTOUT = {x.lower() for x in (json.loads((HERE / "optout.json").read_text()) if (HERE / "optout.json").exists() else [])}
+# Logins whose builds are left off the page entirely, at their own request (e.g. a PR opened by mistake). One login
+# per entry; their records stay in git but are never loaded.
+REMOVED = {x.lower() for x in (json.loads((HERE / "removed.json").read_text()) if (HERE / "removed.json").exists() else [])}
 RENAMED = {k.lower(): v for k, v in (json.loads((HERE / "renamed.json").read_text()) if (HERE / "renamed.json").exists() else {}).items()}
 
 
@@ -490,6 +493,8 @@ def load_accepted(dirs, check_digest=False, now=None, log=print):
     for d in dirs:
         for f in sorted(d.glob("*/*.json")):
             login, rp = f.parent.name, f"submissions/{f.parent.name}/{f.name}"
+            if canon(login).lower() in REMOVED or login.lower() in REMOVED:
+                continue
             try:
                 r = load_record(f)
                 # logins=None: names were judged when the version was accepted and are not re-judged here
