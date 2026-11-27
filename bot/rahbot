@@ -626,10 +626,17 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
                 mine[kw] = min(mine.get(kw) or pw[0]["recorded"], pw[0]["recorded"])
                 # as it was when they finished; kept exact (owner, 2026-11-27: track it accurately, round only on the page)
                 mine.setdefault(kh, round(pw[0]["busy_seconds"] / 3600, 6))
+            secs = pw[0]["busy_seconds"] if pw else None
+            # the ledger keeps the build as it was when they FIRST finished; a later record of the same build can carry
+            # more busy time (files deleted and recompiled: 13 min became 46 min on 2026-11-27, and the page ranked
+            # by the larger number). Older ledger hours are rounded to 0.1 h (up to 180 s off), so only a bigger
+            # difference means the record changed.
+            if secs and mine.get(kh) is not None and abs(mine[kh] * 3600 - secs) > max(216, 0.05 * secs):
+                secs = round(mine[kh] * 3600)
             proofs[pk] = {"modules": union.bit_count(), "n": P["n"], "whole": bool(pw),
                           "finished": mine[kw] if pw else None, "build_hours": mine[kh] if pw else None,
                           # exact, for picking the fastest build (build_hours is rounded to 0.1 h: 300K builds tied)
-                          "build_seconds": pw[0]["busy_seconds"] if pw else None,
+                          "build_seconds": secs,
                           "computers": len(pb), "rank": None,
                           "machine": mach(max(precs, key=lambda r: (r["modules_compiled"], r["recorded"])))}
             if pk == DEFAULT_PROOF:

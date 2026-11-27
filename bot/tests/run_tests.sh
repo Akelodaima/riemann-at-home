@@ -184,6 +184,7 @@ print
 print "=== crash reports"
 python3 -I tests/check_crashes.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 python3 -I tests/check_speed.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
+python3 -I tests/check_first_finish_seconds.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 print
 print "=== the second proof, 300K: acceptance rules, one leaderboard in tiers, finish times kept (2026-11-25)"
 python3 -I tests/check_300k.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }

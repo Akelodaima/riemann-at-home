@@ -17,7 +17,7 @@
   #stage{position:absolute;left:0;top:0;width:1000px;height:680px;transform-origin:0 0}
   #mcap,#libkey{display:none !important}   /* tried on phones, dropped: too much text */
   /* ---------- phones: the map scales to the screen width; everything else is one column with bigger text ---------- */
-  @media (max-width: 760px) {
+  @media (max-width: 999px) {
     body.global{min-width:0}
     #screen{width:auto !important;height:auto !important;display:flex;flex-direction:column;padding:0 0 24px}
     #stagewrap{position:relative;top:0;width:100%;height:calc(100vw * 0.34);overflow:hidden;order:3}
@@ -32,7 +32,7 @@
     #libkey .hint{padding:7px 12px;font-size:12px;color:#7f9fdf;font-weight:normal}
     .global .title{position:static;order:0;font-size:30px;padding:14px 14px 0}
     .global .sub{position:static;order:1;font-size:13px;padding:4px 14px 6px}
-    .global .nav{position:static;order:6;flex-wrap:wrap;padding:6px 12px 4px;justify-content:center}
+    .global .nav{position:static;order:5;flex-wrap:wrap;padding:6px 12px 4px;justify-content:center}
     .global .nav a{font-size:14px;padding:9px 14px}
     .global .extra.panel{position:static !important;width:auto !important;height:auto !important;margin:12px 10px 0}
     .global .joinview{order:7}
@@ -111,6 +111,11 @@
   .nav a.on{color:#fff;background:linear-gradient(#2f5bd8,#13308f)}
   .global.view-statement .boardview,.global.view-statement .joinview{display:none}
   .stview .honor{height:736px}
+  #sigs{height:755px}   /* fills its panel to the bottom edge (the Scroll bar sat 20 px above it) */
+  /* the signatures scroll inside their panel on desktop: a solid footer says so, instead of a row sliced at the edge */
+  .sigmore{position:sticky;bottom:-4px;padding:7px 10px;background:#13308f;border-top:1px solid #6f8fff;color:#fff;font-size:12px;font-weight:bold;text-align:center}
+  @media (max-width: 999px){.sigmore{display:none}}
+  @media (max-width: 420px){body .funnel{grid-template-columns:1fr 46px}body .funnel .fl{grid-column:1 / -1}}   /* body: beats the .funnel rule below */
   /* 300K joint statement (issue #76), under the 17M one */
   .stmt .badgekey{list-style:none;padding-left:0;margin:0 0 8px}.stmt .badgekey li{margin:0 0 6px}
   .stmt .badgekey .lvl{margin:0 6px 0 0}.lvl.b17{background:#ffd23f}.lvl.b3{background:#ff9ae8}.lvl.x3{background:#b6ff7d}
@@ -168,28 +173,29 @@
   .stack .honor{height:auto;overflow:visible}
   .joinview,.runview{box-sizing:border-box}
   /* Building now: compact rows (owner, 2026-11-23) */
-  @media (min-width: 761px){#running .run{padding:5px 10px;gap:9px}
+  @media (min-width: 1000px){#running .run{padding:5px 10px;gap:9px}
     #running .run .w{font-size:13px}#running .run .pc{font-size:11px}
     #running .pb{height:6px;margin-top:4px}}
   .tier{padding:7px 12px 5px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase}
-  .tier.g{color:#1a1200;background:linear-gradient(90deg,#ffd23f,#ffe98a 60%,rgba(255,210,63,.2))}
+  .tier.g{color:#1a1200;background:linear-gradient(90deg,#ffd23f,#ffe98a 60%,rgba(255,210,63,.7))}
   .tier.w{color:#ffd23f;background:rgba(0,0,0,.3)}.tier.r{color:#c9f5d4;background:rgba(0,0,0,.3)}.tier.x{color:#b9d0ff;background:rgba(0,0,0,.3)}
-  .tier.b{color:#1a1200;background:linear-gradient(90deg,#ffd23f,#c9a7ff 70%,rgba(201,167,255,.2))}
-  .tier.k{color:#1a0f2e;background:linear-gradient(90deg,#c9a7ff,#e4d6ff 60%,rgba(201,167,255,.2))}
+  .tier.b{color:#1a1200;background:linear-gradient(90deg,#ffd23f,#c9a7ff 70%,rgba(201,167,255,.7))}
+  .tier.k{color:#1a0f2e;background:linear-gradient(90deg,#c9a7ff,#e4d6ff 60%,rgba(201,167,255,.7))}
   .vrow.both{background:linear-gradient(90deg,rgba(255,210,63,.22),rgba(201,167,255,.10))}
   .wrow.k3{background:rgba(201,167,255,.07)}.wrow.k3 .av{box-shadow:0 0 0 2px #c9a7ff}
   /* compact leaderboard (2026-11-25, temporary; COMPACT in the board code) */
   .crow{display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid rgba(255,210,63,.3);background:linear-gradient(90deg,rgba(255,210,63,.16),rgba(255,210,63,.03))}
   .crow.cw{background:rgba(255,210,63,.06);border-bottom-color:rgba(120,160,255,.16)}.crow.k3{background:rgba(201,167,255,.07)}
   .crow .rk{font-size:17px;color:#ffd23f;width:24px;text-align:center;flex:none}
-  .crow .nm{font-size:15px;color:#fff;flex:0 1 auto;min-width:60px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.crow .nm a{color:inherit;text-decoration:none}
+  .crow .nm{font-size:15px;color:#fff;flex:0 0 auto;min-width:60px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.crow .nm a{color:inherit;text-decoration:none}
   .crow .bd{white-space:nowrap;flex:none}.crow .bd .whole,.crow .bd .lvl{margin:0 4px 0 0}.crow .lvl.sg{background:#7fd8ff}
-  .crow .facts{margin-left:auto;font-size:12px;font-weight:normal;color:#cfe0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;text-align:right}
-  @media (max-width:760px){.crow{flex-wrap:wrap}.crow .facts{flex-basis:100%;margin-left:34px;white-space:normal;text-align:left}}
+  .crow .facts{margin-left:auto;font-size:12px;font-weight:normal;color:#cfe0ff;white-space:nowrap;min-width:0;display:flex;justify-content:flex-end}
+  .crow .facts .t{flex:none}.crow .facts .m{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  @media (max-width:999px){.crow{flex-wrap:wrap;row-gap:3px}.crow .facts{flex-basis:100%;margin-left:34px;margin-top:2px;white-space:normal;text-align:left;display:block}.crow .facts .m{white-space:normal;overflow:visible}.crow .bd{white-space:normal;flex:1 1 100%;min-width:0;margin-left:34px;margin-top:0}.crow .bd .whole,.crow .bd .lvl{display:inline-block;margin-bottom:2px}}
   .fastlist .crow.more{display:none}.fastlist.open .crow.more{display:flex}
   .sortbar{display:flex;gap:6px;align-items:center;padding:8px 12px;font-size:12px;color:#9fb6ff;background:#101a3c}.sortbar a{padding:3px 10px;border:1px solid #2f4690;color:#cfe0ff;text-decoration:none;border-radius:3px}.sortbar a.on{background:#ffd23f;border-color:#ffd23f;color:#000;font-weight:bold}
   .showall{display:block;padding:9px 14px;font-size:13px;color:#9fb6ff;background:#142048;text-decoration:none}.showall:hover{color:#cfe0ff}
-  .tier small{font-weight:normal;letter-spacing:0;text-transform:none;opacity:.85;margin-left:8px}
+  .tier small{font-weight:normal;letter-spacing:0;text-transform:none;margin-left:8px;font-size:11px}
   .vrow{display:flex;align-items:center;gap:16px;padding:14px 16px;background:linear-gradient(90deg,rgba(255,210,63,.22),rgba(255,210,63,.04));border-bottom:1px solid rgba(255,210,63,.4)}
   .vrow .av{border:3px solid #ffd23f;box-shadow:0 0 18px rgba(255,210,63,.7)}
   .vrow .rk{font-size:30px;color:#ffd23f;width:40px;text-align:center;flex:none}
@@ -242,8 +248,8 @@
   /* owner, 2026-11-23: the headline sits under the map, above the leaderboard */
   .headline{position:absolute;left:22px;top:540px;font:bold 28px Arial,Helvetica,sans-serif;color:#ffd23f;text-shadow:0 0 10px rgba(255,210,63,.45);z-index:2}
   .joinhead{padding:12px 12px 4px;font:bold 22px Arial,Helvetica,sans-serif;color:#ffd23f}
-  @media (max-width: 760px){.global .joinhead{font-size:19px;line-height:1.25}}
-  @media (max-width: 760px){.global .headline{position:static;order:4;font-size:21px;line-height:1.25;padding:6px 14px 8px}}
+  @media (max-width: 999px){.global .joinhead{font-size:19px;line-height:1.25}}
+  @media (max-width: 999px){.global .headline{position:static;order:4;font-size:21px;line-height:1.25;padding:6px 14px 8px}}
   #tab-statement{border-color:#ffd23f;color:#ffd23f}
   /* "I'm totally confused" explainer: normal flow under the dashboard, same look as the navy panels */
   #confused{width:956px;box-sizing:border-box;margin:0 auto 24px;padding:4px 22px 14px;background:rgba(5,15,60,.72);
@@ -254,7 +260,7 @@
   #confused p{margin:0 0 8px;max-width:760px}
   #confused b{color:#fff}
   #confused a{color:#7fd8ff}
-  @media (max-width: 760px){#confused{width:auto;margin:16px 10px 32px;padding:4px 14px 12px;font-size:15px}
+  @media (max-width: 999px){#confused{width:auto;margin:16px 10px 32px;padding:4px 14px 12px;font-size:15px}
     #confused h2{font-size:20px}}
   @media print{#confused,.stat{display:none !important}}
 </style></head>
@@ -412,7 +418,7 @@ board = board.slice().sort((a, b) => b.modules - a.modules || String(a.since).lo
                                     || (a.first_whole_proof_rank ?? 1e9) - (b.first_whole_proof_rank ?? 1e9));
 let maxVal = 1; for (const h of heights) if (h > maxVal) maxVal = h;
 const BUILT0 = heights.map(h => h > 0 ? 1 : 0);     // built at least once (before the replay lowers recent ones)
-const PHONE = () => innerWidth <= 760;
+const PHONE = () => innerWidth <= 999;
 // Replay: modules that gained a builder since the bot's previous update ("recent", delta-coded) start one lower and
 // grow back in one by one over the next ~10 minutes, so the map shows the last update's work as it happened.
 // (#demo makes up a few hundred from the sample so the animation can be seen.)
@@ -499,7 +505,8 @@ $("sigs").innerHTML = sigs.length ? sigs.map(g =>
     `<div class="sig">${avatar(g, 28)}<div class="body">${person(g, "w")}` +
     `<div class="meta">${whenOf(g)}${g.machine ? " · " + esc(g.machine) : ""}</div>` +
     (g.via === "record" ? `<div class="via">added from their build record</div>` : "") +
-    `<div class="badges">${badgeHTML(g)}</div></div></div>`).join("")
+    `<div class="badges">${badgeHTML(g)}</div></div></div>`).join("") +
+    (sigs.length > 6 ? `<div class="sigmore">Scroll for all ${sigs.length} signatures ↓</div>` : "")
   : `<div class="note">No signatures yet. Run <code>riemann-at-home sign</code> on a finished build.</div>`;
 // Printable joint statement (no avatars, no external loads): statement text as on the page, badges in color,
 // everyone numbered in the order they first finished; links printed as URLs.
@@ -530,6 +537,8 @@ const exportLine = x => !x ? "" : x.done
     `<div class="bar"><i style="width:${(x.bytes / x.total * 100).toFixed(1)}%"></i></div></div>`;
 // The two panels, drawn from a data.json. Called again as soon as the bot publishes new data, so people and their
 // progress update within a minute; the map's replay of new modules still finishes before the page reloads (2026-11-22).
+// the leaderboard's sort, kept across the page's own reloads (it reloads itself when the bot publishes new data)
+let sortMode = (() => { try { return sessionStorage.getItem("rah-sort"); } catch (e) { return null; } })() || "fast";
 function renderPanels(DATA) {
 const board = DATA.leaderboard || [];
 // "Join N independent validators": everyone on the leaderboard, updated with the data (every refresh)
@@ -632,7 +641,7 @@ if (TIERED) {
     `${avatar(p, 30)}<span class="nm">${person(p)}</span><span class="bd">${badges(p)}${levelBadge(p.level)}` +
     (rk === 1 ? `<span class="lvl fastb" title="Fastest whole ${which} build">FASTEST ${which}</span>` : "") +
     (signed.has(p.who || p.name) ? '<span class="lvl sg" title="Signed the joint statement">SIGNED</span>' : "") + `</span>` +
-    `<span class="facts">${rk === 1 ? `<b class="fastest">${tdur(s)}</b>` : tdur(s)}${mach ? " · " + esc(mach) : ""}</span></div>`; };
+    `<span class="facts"><span class="t">${rk === 1 ? `<b class="fastest">${tdur(s)}</b>` : tdur(s)}</span>${mach ? `<span class="m">&nbsp;· ${esc(mach)}</span>` : ""}</span></div>`; };
   const FAST_TOP = 10;
   const moreLink = (n, which) => n > FAST_TOP ? `<a href="#" class="showall fastmore">Show all ${n} ${which} builds ▾</a>` : "";
   const l17 = timed(board.filter(p => p.whole_proof), secs17), l3 = timed(board.filter(has3), secs3);
@@ -653,15 +662,16 @@ let boardHTML = full, board2HTML = "";
 const rowsAll = items.filter(it => it.p);
 if (COMPACT && rowsAll.length > TOP) {
   const shown = new Set(rowsAll.slice(0, TOP));
-  const cfacts = p => { const k = p3(p), bits = [];
+  const cfacts = p => { const k = p3(p), t = [], m = [];     // times (.t) never shrink; the rest (.m) gets "…"
     if (p.whole_proof) {
-      if (p.build_hours != null) bits.push(fastPink(p, "17m", (TIERED && k?.whole ? "17M " : "") + hours(p.build_hours)));
-      if (TIERED && k?.whole) bits.push(fastPink(p, "300k", `300K ${hours(k.build_hours) || "?"}`));   // times first:
-      if (p.machine) bits.push(esc(p.machine));                    // the row is cut off at its right edge
-      if (p.export?.done && p.export.matches) bits.push(`export ${dur(p.export.seconds)}`);
+      if (p.build_hours != null) t.push(fastPink(p, "17m", (TIERED && k?.whole ? "17M " : "") + hours(p.build_hours)));
+      if (TIERED && k?.whole) t.push(fastPink(p, "300k", `300K ${hours(k.build_hours) || "?"}`));
+      if (p.export?.done && p.export.matches) t.push(`export ${dur(p.export.seconds)}`);   // a time too: never cut
+      if (p.machine) m.push(esc(p.machine));
     } else if (k?.whole) {
-      if (k.build_hours != null) bits.push(fastPink(p, "300k", hours(k.build_hours))); if (k.machine) bits.push(esc(k.machine)); }
-    return bits.join(" · "); };
+      if (k.build_hours != null) t.push(fastPink(p, "300k", hours(k.build_hours))); if (k.machine) m.push(esc(k.machine)); }
+    return (t.length ? `<span class="t">${t.join(" · ")}</span>` : "") +
+           (m.length ? `<span class="m">${t.length ? "&nbsp;· " : ""}${m.join(" · ")}</span>` : ""); };
   const cRow = it => `<div class="crow${it.v ? "" : " cw"}${it.cls === " k3" ? " k3" : ""}" data-who="${esc(it.p.who || it.p.name)}"><span class="rk">${it.v ? it.rank : ""}</span>` +
     `${avatar(it.p, 30)}<span class="nm">${person(it.p)}</span><span class="bd">${badges(it.p)}${levelBadge(it.p.level)}${fastBadges(it.p)}` +
     (signed.has(it.p.who || it.p.name) ? '<span class="lvl sg" title="Signed the joint statement">SIGNED</span>' : "") +
@@ -699,15 +709,19 @@ const rRows = running.map((p, k) => {
       `</div></div>`; }).join("");
 const sortBar = mode => fastHTML ? `<div class="sortbar">Sort: <a href="#" data-sort="fast" class="${mode === "fast" ? "on" : ""}">Fastest time</a>` +
   `<a href="#" data-sort="first" class="${mode === "first" ? "on" : ""}">First to finish</a></div>` : "";
-const showBoard = mode => {
+const showBoard = (mode, refit) => {
   const fastMode = mode === "fast" && fastHTML;
+  sortMode = fastMode ? "fast" : "first"; try { sessionStorage.setItem("rah-sort", sortMode); } catch (e) {}
   $("board").innerHTML = sortBar(fastMode ? "fast" : "first") + (fastMode ? fastHTML : boardHTML);
   $("board").querySelectorAll(".showall").forEach(a => a.onclick = e => { e.preventDefault(); $("board2").parentElement.scrollIntoView({behavior: "smooth", block: "start"}); });
-  $("board").querySelectorAll(".fastmore").forEach(a => a.onclick = e => { e.preventDefault(); a.closest(".fastlist").classList.add("open"); a.remove(); });
-  $("board").querySelectorAll(".sortbar a").forEach(a => a.onclick = e => { e.preventDefault(); showBoard(a.dataset.sort); });
+  // the panels under the board are placed by fitBoard(): every click that changes the board's height must re-place
+  // them, or Join in and Building now cover the board (live bug in de910c3, caught by pagecheck)
+  $("board").querySelectorAll(".fastmore").forEach(a => a.onclick = e => { e.preventDefault(); a.closest(".fastlist").classList.add("open"); a.remove(); fitBoard(); });
+  $("board").querySelectorAll(".sortbar a").forEach(a => a.onclick = e => { e.preventDefault(); showBoard(a.dataset.sort, true); });
   const b2 = fastMode ? "" : board2HTML;
-  $("board2").innerHTML = b2; $("board2").parentElement.style.display = b2 ? "" : "none"; };
-showBoard("fast");
+  $("board2").innerHTML = b2; $("board2").parentElement.style.display = b2 ? "" : "none";
+  if (refit) fitBoard(); };
+showBoard(sortMode);
 $("also").innerHTML = (VALIDATED.length ? VALIDATED.map(({who, what, url}) =>
     `<div class="val"><b>✓</b> <span class="who">${esc(who)}</span><br><span class="what">${esc(what)}</span> <a href="${esc(url)}" target="_blank">source</a></div>`).join("") +
     `<div class="note">As each person reported it publicly. Their reputation is on the line, and anyone can reproduce the check.</div>` : "");
@@ -773,7 +787,8 @@ function fitBoard() {
   b.style.top = `${top}px`;
   const y = top + b.offsetHeight + STACK_GAP;
   Object.assign(j.style, {left: "22px", width: `${JOIN_W}px`, top: `${y}px`, height: ""});
-  Object.assign(r.style, {left: `${22 + JOIN_W + STACK_GAP}px`, width: `${956 - JOIN_W - STACK_GAP}px`, top: `${y}px`, height: ""});
+  // + 2: Join in and Building now are border-box, the leaderboard above is 956 px plus its 1 px borders
+  Object.assign(r.style, {left: `${22 + JOIN_W + STACK_GAP}px`, width: `${956 + 2 - JOIN_W - STACK_GAP}px`, top: `${y}px`, height: ""});
   pr.style.height = "";
   const h = Math.max(j.offsetHeight, r.offsetHeight);
   pr.style.height = `${pr.clientHeight - 16 + (h - j.offsetHeight)}px`;   // 16 = the prompt's padding
@@ -924,7 +939,7 @@ stars(); terrain();
   }); }
 // Phones: scale the 1000x680 map to the screen width (the rest of the page is a normal column there).
 { const TOP = 140, H = 340;                  // phones: show only the map's band (desktop title/summary areas trimmed)
-  const fit = () => { const phone = innerWidth <= 760, k = phone ? $("stagewrap").clientWidth / 1000 : 1;
+  const fit = () => { const phone = innerWidth <= 999, k = phone ? $("stagewrap").clientWidth / 1000 : 1;
                       $("stage").style.transform = phone ? `scale(${k}) translateY(${-TOP}px)` : "";
                       $("stagewrap").style.height = phone ? `${Math.round(H * k)}px` : ""; };
   let wasPhone = PHONE();
