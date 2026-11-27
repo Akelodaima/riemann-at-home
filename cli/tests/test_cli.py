@@ -1282,13 +1282,38 @@ class Parallel(unittest.TestCase):
         self.assertIsNone(rah.parallel_ram_problem(125))                      # upstream's 125 GiB machine ran it
         self.assertIsNone(rah.parallel_ram_problem(0))                        # unknown: let it try
 
-    def test_flag_is_hidden_and_needs_fast_exit(self):
+    def test_flag_is_listed_and_needs_fast_exit(self):
+        """Listed in --help since a run of the pinned version matched the reference (issue #24, 2026-11-26)."""
         out = io.StringIO()
         with contextlib.redirect_stdout(out), self.assertRaises(SystemExit):
             rah.main(["export", "--help"])
-        self.assertNotIn("--parallel", out.getvalue())
-        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
-            rah.main(["export", "--parallel", "--no-fast-exit", "--proof", "17m"])
+        self.assertIn("--parallel", out.getvalue()); self.assertIn("--low-memory-ok", out.getvalue())
+        for argv in (["--parallel", "--no-fast-exit"], ["--low-memory-ok"]):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                rah.main(["export", *argv, "--proof", "17m"])
+
+    def test_low_memory_ok_lets_it_start(self):
+        """Below 100 GB --parallel refuses before building anything, unless --low-memory-ok (issue #24)."""
+        from unittest import mock
+        built = []
+        ctx = types.SimpleNamespace(conf=lambda: {})
+        a = types.SimpleNamespace(check=False, parallel=True, low_memory_ok=False, fast_exit=True)
+        stop = rah.Fail("stop here")
+        with mock.patch.object(rah, "whole_build", lambda c, a, w: {"build_id": "b"}), \
+                mock.patch.object(rah, "total_ram_gb", lambda: 64), mock.patch.object(rah, "keep_awake", lambda: None), \
+                mock.patch.object(rah, "exporter_command", lambda c, a: built.append(1) or (_ for _ in ()).throw(stop)):
+            with self.assertRaises(rah.Fail) as e:
+                rah.cmd_export(ctx, a)
+            self.assertIn("--low-memory-ok", str(e.exception)); self.assertEqual(built, [])
+            a.low_memory_ok = True
+            with self.assertRaises(rah.Fail) as e:
+                rah.cmd_export(ctx, a)
+            self.assertIs(e.exception, stop); self.assertEqual(built, [1])
+
+    def test_memory_warning_without_the_old_end_pause(self):
+        """The fast exit removed the end pause, so the '2 hours' figure is not shown with it (issue #24)."""
+        self.assertNotIn("2 hours", rah.export_memory_warning(125, fast=True))
+        self.assertIn("2 hours", rah.export_memory_warning(125, fast=False))
 
     def test_record_names_the_exporter(self):
         self.assertEqual(rah.exporter_name(types.SimpleNamespace(parallel=True)),

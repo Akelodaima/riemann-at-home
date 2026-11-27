@@ -2562,7 +2562,7 @@ PARALLEL_REPO = "https://github.com/abhiapsunde/lean4export"
 PARALLEL_COMMIT = "73d9ad9b12ff10a40e5b7a8fcb70f038e163fcc3"
 PARALLEL_PARENTS = ["bd0b60df55394cfe1a795de0adeedb5abcf0f8c2",    # lean4export#61 (its head)
                     "df81913eee5519d5a88ae5b0fd701b5298cc29ab"]    # lean4export master the two were written on
-PARALLEL_RAM_MINIMUM_GB = 100     # upstream measured an 89 GB peak (16 cores, one run); its 125 GiB machine must pass
+PARALLEL_RAM_MINIMUM_GB = 100     # measured peaks: 89 GB (16 cores) and 118 GB (126 GB machine); --low-memory-ok overrides
 PARALLEL_FILES = ["Export.lean", "Export", "Main.lean"]        # the exporter's sources; not its tests or toolchain
 
 
@@ -2900,20 +2900,26 @@ def cmd_export(ctx: Ctx, a):
     if st.get("build_id") == rec["build_id"] and st.get("final_sent"):
         raise Fail("this build's final record was already sent, so an export result can't reach the leaderboard any "
                    "more (the bot takes no updates after `finish`)")
+    parallel = bool(getattr(a, "parallel", False))
+    if parallel:                                  # before building anything
+        problem = parallel_ram_problem(total_ram_gb())
+        if problem and not getattr(a, "low_memory_ok", False):
+            raise Fail(problem + " (or add --low-memory-ok to try anyway, with plenty of swap)")
     keep_awake()
     cmd = exporter_command(ctx, a)
     ctx.logs.mkdir(parents=True, exist_ok=True)
     log = ctx.logs / "export.log"
     print(f"exporting the proof: {EXPORT_BYTES / 1e9:.1f} GB of output, hashed as it streams (nothing written to disk)")
-    warn = export_memory_warning(total_ram_gb())
-    if warn:
-        print(warn, file=sys.stderr)
-    if getattr(a, "parallel", False):
-        problem = parallel_ram_problem(total_ram_gb())
+    if parallel:
+        print(f"parallel export on all cores. Measured peaks: 89 GB (16 cores) and 118 GB (on a 126 GB computer). "
+              "The result is compared with the reference as usual.")
         if problem:
-            raise Fail(problem)
-        print("trial: parallel export on all cores. The memory figures above are for the standard exporter; upstream "
-              "measured a peak of 89 GB with this one (one computer). The result is compared with the reference as usual.")
+            print(f"warning: {problem.split(';')[0]}; going ahead because of --low-memory-ok. Expect heavy swapping.",
+                  file=sys.stderr)
+    else:
+        warn = export_memory_warning(total_ram_gb(), fast=bool(getattr(a, "fast_exit", False)))
+        if warn:
+            print(warn, file=sys.stderr)
     t0 = time.time()
     pf = ctx.home / "export-progress.json"
     base = {"build_id": rec["build_id"], "olean_digest": rec["olean_digest"]}
@@ -2983,7 +2989,7 @@ def total_ram_gb() -> float:
 EXPORT_RAM_COMFORTABLE_GB, EXPORT_RAM_MINIMUM_GB = 140, 96
 
 
-def export_memory_warning(ram_gb: float):
+def export_memory_warning(ram_gb: float, fast: bool = False):
     """A warning (or None) about this computer's memory for the export. Never refuses: it is the volunteer's call."""
     if not ram_gb or ram_gb >= EXPORT_RAM_COMFORTABLE_GB:
         return None
@@ -2993,6 +2999,8 @@ def export_memory_warning(ram_gb: float):
         return (f"warning: this computer has {ram_gb:.0f} GB of memory; {need}. With less than "
                 f"{EXPORT_RAM_MINIMUM_GB} GB it will swap heavily and may never finish. Level 2 is optional.")
     tip = " Close other programs; more swap (32 GB or so) helps." if not IS_MAC else " Close other programs."
+    if fast:      # the fast exit removed the end pause that the 2-hour figure measured (issue #24)
+        return f"warning: this computer has {ram_gb:.0f} GB of memory; {need}. It should work.{tip}"
     return (f"warning: this computer has {ram_gb:.0f} GB of memory; {need}. It should work, but the last part may "
             f"slow down a lot as memory fills (on a 125 GB computer the final 0.01% took almost 2 hours).{tip}")
 
@@ -3023,7 +3031,7 @@ def saved_export(ctx: Ctx, a) -> Path:
         raise Fail(f"recheck saves the export ({EXPORT_BYTES / 1e9:,.1f} GB) to {path.parent} first, and "
                    f"{free:,.0f} GB are free there (needs about {need:,.0f} GB). Free some disk and try again.")
     print(f"exporting once to {path} ({EXPORT_BYTES / 1e9:,.1f} GB on disk; the checkers then read it from there)")
-    if warn := export_memory_warning(total_ram_gb()):
+    if warn := export_memory_warning(total_ram_gb(), fast=bool(getattr(a, "fast_exit", False))):
         print(warn, file=sys.stderr)
     try:
         with open(part, "wb") as f:
@@ -3607,8 +3615,11 @@ def main(argv=None):
                         help="Level 2: hash the proof export (lean4export, streamed, never stored) against the reference")
     ex.add_argument("--check", action="store_true",
                     help="just check that the exporter works on this computer (exports one compiled module, about a minute)")
-    ex.add_argument("--parallel", action="store_true",      # experimental, so not in --help until it has a run of ours
-                    help=argparse.SUPPRESS)
+    ex.add_argument("--parallel", action="store_true",      # in --help since a pinned run matched the reference (#24)
+                    help="export on all cores with the parallel lean4export (lean4export#63, pinned): about 25 min "
+                         "instead of hours; needs about 100 GB of memory")
+    ex.add_argument("--low-memory-ok", action="store_true",
+                    help="with --parallel: start even below 100 GB of memory (have plenty of swap)")
     ex.add_argument("--fast-exit", action=argparse.BooleanOptionalAction, default=True,
                     help="skip lean4export's slow memory cleanup after the last byte (issue #24); same output. "
                          "On by default since a full export matched the reference with it; --no-fast-exit turns it off")
@@ -3630,6 +3641,8 @@ def main(argv=None):
     x.add_argument("--target")
     x.add_argument("--test-unofficial-folder", action="store_true")
     a = ap.parse_args(argv)
+    if a.cmd == "export" and a.low_memory_ok and not a.parallel:
+        ap.error("--low-memory-ok goes with --parallel; the standard export has no memory minimum")
     if a.cmd == "export" and a.parallel and not a.fast_exit:
         ap.error("--no-fast-exit is for the standard exporter only; leave it out with --parallel")
     try:
