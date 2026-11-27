@@ -110,6 +110,10 @@
   .nav a.on{color:#fff;background:linear-gradient(#2f5bd8,#13308f)}
   .global.view-statement .boardview,.global.view-statement .joinview{display:none}
   .stview .honor{height:502px}
+  /* 300K joint statement (issue #76), under the 17M one */
+  .stmt.s300{height:374px}#sigs3{height:374px}
+  .signnote{margin:8px 0 0;color:#9fb3e8;font-size:11px;line-height:1.45}
+  .sig .via{color:#7f9fdf;font-size:10px;font-style:italic}
   .global .stview{display:none}.global.view-statement .stview{display:block}
   .stmt{height:604px;overflow-y:auto;padding:6px 12px 8px;color:#dfe7ff;font-weight:normal;font-size:12px;line-height:1.5}
   .stmt h4{margin:2px 0 6px;color:#ffd23f;font-size:13px;letter-spacing:.3px}
@@ -300,10 +304,30 @@
       <p>We do not certify the mathematics. That the statement is Mathlib's Riemann Hypothesis, and that the proved theorem is exactly that statement, was checked by the Lean and Mathlib communities (<a href="https://leanprover-community.github.io/blog/posts/riemann-hypothesis/" target="_blank" rel="noopener">their statement</a>). Each signature is the signer's own report, tied to their GitHub account.</p>
       <p>We join the Lean and Mathlib communities in congratulating Levent Alpöge.</p>
       <div class="sofar" id="sofar"></div>
+      <p class="signnote">Signing is on by default when your build qualifies; you see the statement first and can withdraw any time with <code>riemann-at-home sign --cancel</code>.</p>
       <span class="btn" id="pdf" style="margin-left:0" title="Opens the print dialog: choose “Save as PDF”">DOWNLOAD PDF</span>
     </div></div>
   <div class="extra panel blue stview" style="left:598px;top:598px;width:380px;height:646px">
     <h3 id="sighead">Signatures</h3><div id="sigs" class="honor"></div></div>
+  <!-- 300K joint statement (issue #76): its own text and its own list -->
+  <div class="extra panel navy stview" style="left:22px;top:1260px;width:560px;height:416px">
+    <h3>300K joint statement</h3>
+    <div class="stmt s300">
+      <h4>Riemann@home: a joint statement from independent builders of the 300K proof</h4>
+      <p>We, the undersigned, each built the 300K-line Lean proof of the Riemann Hypothesis and Dirichlet GRH (<a href="https://github.com/lsernau/grh-lean" target="_blank" rel="noopener">lsernau/grh-lean</a> at commit <code>72fead10…7207</code>, its readable edition <code>grh/</code>) on our own computers with the pinned Lean 4.35.0 and Mathlib.</p>
+      <p>Each signatory:</p>
+      <ol>
+        <li>compiled all 803 modules without errors,</li>
+        <li>confirmed that the five main theorems depend only on Lean's three standard axioms (<code>propext</code>, <code>Classical.choice</code>, <code>Quot.sound</code>).</li>
+      </ol>
+      <p>This proof has no reference export yet, so this statement does not cover reproducing an export.</p>
+      <p>We do not certify the mathematics: whether the five theorems state the Riemann Hypothesis and Dirichlet GRH as intended is for mathematicians and the Lean community to judge. Each name is tied to that builder's GitHub account and their published build record.</p>
+      <div class="sofar s300"></div>
+      <p class="signnote">Signing is on by default when your build qualifies; you see the statement first and can withdraw any time with <code>riemann-at-home sign --cancel --proof 300k</code>.</p>
+      <p class="signnote">Builders who finished before signing existed were added from their build records; to be removed, run <code>riemann-at-home sign --cancel --proof 300k</code> or ask in an issue.</p>
+    </div></div>
+  <div class="extra panel blue stview" style="left:598px;top:1260px;width:380px;height:416px">
+    <h3 id="sighead3">300K signatures</h3><div id="sigs3" class="honor"></div></div>
 </div>
 <!-- Plain-language explainer for newcomers (owner, 2026-11-22). The bot copies this section into index.md: keep it to
      <h2>, <p>, <a>, <b> so the markdown conversion stays simple. -->
@@ -468,6 +492,14 @@ $("sigs").innerHTML = sigs.length ? sigs.map(g =>
     `<div class="badges">${g.level >= 2 ? '<span class="lvl l2">EXPORT REPRODUCED</span>' : ""}` +
     `${g.level >= 3 ? `<span class="lvl l3">INDEPENDENT RE-CHECK: ${esc((g.checkers || []).join(", ") || "yes")}</span>` : ""}</div></div></div>`).join("")
   : `<div class="note">No signatures yet.</div>`;
+// 300K statement (issue #76): self-signed people, and finished builders added from their build records (marked)
+{ const s3 = (DATA.signatures_300k || []).slice().sort((a, b) => String(a.signed).localeCompare(String(b.signed)));
+  $("sighead3").textContent = `300K signatures${s3.length ? " · " + s3.length : ""}`;
+  $("sigs3").innerHTML = s3.length ? s3.map(g =>
+      `<div class="sig">${avatar(g, 28)}<div class="body">${person(g, "w")}` +
+      `<div class="meta">${g.via === "record" ? "finished " : "signed "}${date(g.signed)}${g.machine ? " · " + esc(g.machine) : ""}</div>` +
+      (g.via === "record" ? `<div class="via">added from their build record</div>` : "") + `</div></div>`).join("")
+    : `<div class="note">No signatures yet. Run <code>riemann-at-home sign --proof 300k</code> on a finished 300K build.</div>`; }
 // Printable joint statement (no avatars, no external loads): statement text as on the page, links printed as URLs.
 { const lvlText = g => g.level >= 3 ? `Level 3: export reproduced; independent re-check: ${(g.checkers || []).join(", ") || "yes"}`
                                     : g.level >= 2 ? "Level 2: export reproduced" : `Level ${g.level ?? "?"}`;
@@ -672,10 +704,10 @@ function personal(DATA) {
 // Desktop (owner, 2026-11-23): the Leaderboard full width; under it Join in (left) and Building now (right) side by
 // side, ending level: the prompt box stretches to take up any spare room; Also checked independently below both.
 // Nothing scrolls inside a panel; the page grows. The statement tab keeps its fixed layout.
-const SCREEN_H = 1392, STACK_TOP = 598, STACK_GAP = 16, JOIN_W = 470;
+const SCREEN_H = 1392, STACK_TOP = 598, STACK_GAP = 16, JOIN_W = 470, STATEMENT_H = 1692;   // + the 300K statement
 function fitBoard() {
   if (PHONE()) return;
-  if (document.body.classList.contains("view-statement")) { $("screen").style.height = `${SCREEN_H}px`; return; }
+  if (document.body.classList.contains("view-statement")) { $("screen").style.height = `${STATEMENT_H}px`; return; }
   const b = $("board").parentElement, j = document.querySelector(".joinview"), r = $("running").parentElement,
         al = $("also").parentElement, pr = $("prompt");
   const hl = $("headline"), top = Math.max(STACK_TOP, hl.offsetTop + hl.offsetHeight + 14);   // room for a 2-line headline

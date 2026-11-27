@@ -231,7 +231,12 @@ Mathlib's RiemannHypothesis; proved theorem is exactly that statement) are their
     `/opt/riemann-at-home/grh`; module list `bot/modules-300k.txt` (src/**/*.lean sorted byte-wise, N = 803, sha256
     `f0b574a8...13d1`). Build: plain `lake build`; axioms: `lake env lean scripts/PrintAxioms.lean`. `whole_proof`
     needs all 803 modules and all five theorems printed; `axioms` = their axioms together, exactly the three.
-  - 300K has no Level 2 reference: `export_*`, `checkers`, `sign_statement` are rejected on 300K records.
+  - 300K has no Level 2 reference: `export_*` and `checkers` are rejected on 300K records. Since 2026-11-27 (issue
+    #76) 300K has its own joint statement: `"sign_statement": true` is accepted on a whole 300K record whose
+    axioms are exactly the three standard ones, and `"sign_statement": false` (sign --cancel --proof 300k) is an
+    opt-out. data.json `signatures_300k` lists self-signed builders, and builders with such a whole build who have
+    not opted out, marked `"via": "record"`; opt-out (false in the newest 300K record, or the login in
+    bot/optout.json) always wins.
     `olean_digest` has no 300K reference either (not checked, like 17M today).
 - Each proof gets its own `build_id` (one PR per build, same path rules). A build cannot switch proofs.
 - Speed: the same rule; with 803 modules and the 10-minute floor it cannot trigger for 300K (needs 300K timings

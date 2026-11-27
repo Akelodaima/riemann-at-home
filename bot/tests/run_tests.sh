@@ -185,6 +185,9 @@ print
 print "=== the second proof, 300K: acceptance rules, one leaderboard in tiers, finish times kept (2026-11-25)"
 python3 -I tests/check_300k.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 print
+print "=== the 300K joint statement: signing, listing from build records, opt-out (issue #76)"
+python3 -I tests/check_sign300k.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
+print
 print "=== a renamed GitHub account: one row, old-login PRs still accepted (2026-11-26)"
 python3 -I tests/check_renamed.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 print

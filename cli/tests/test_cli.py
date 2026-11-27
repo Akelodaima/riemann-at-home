@@ -779,17 +779,20 @@ class Levels(unittest.TestCase):
         self.assertIn("Nothing is signed before then", out)
         code, out, err = self.main("status")
         self.assertIn("statement signed in advance", out)
-        # a mismatching export: no signature
-        code, out, err = self.main("export", "--exporter", self.exporter, ref=False)
+        # a mismatching export (other bytes): no signature
+        other = self.tmp / "bin/other-export"
+        other.write_text(f"#!{sys.executable} -I\nimport sys\nsys.stdout.buffer.write(b'not the proof')\n"); other.chmod(0o755)
+        code, out, err = self.main("export", "--exporter", other, ref=False)
         self.assertEqual(code, 1); self.main("record", ref=False)
         self.assertNotIn("sign_statement", self.latest_record())
         # a reworded statement needs a new yes
-        with mock.patch.object(rah, "statement_text", lambda: "Riemann@home: a joint statement, reworded."):
+        with mock.patch.object(rah, "statement_text", lambda proof="17m": "Riemann@home: a joint statement, reworded."):
             ctx = rah.Ctx(type("A", (), {"folder": str(self.folder), "logs": None})())
             self.assertIsNone(rah.sign_when_done(ctx))
         # the matching export signs, and says so
         code, out, err = self.main("export", "--exporter", self.exporter)
-        self.assertEqual(code, 0, err); self.assertIn("Joint statement signed, as you chose at setup", out)
+        self.assertEqual(code, 0, err); self.assertIn("You signed this statement. To withdraw: riemann-at-home sign --cancel", out)
+        self.assertIn("Riemann@home: a joint statement from independent builders", out.split("export matches")[1])
         self.assertIn("You're a validator! Tell people", out); self.assertIn("https://x.com/intent/tweet?text=", out)
         self.assertIs(self.latest_record().get("sign_statement"), True)
         # and it can be taken back
@@ -1329,6 +1332,177 @@ class FileMax(unittest.TestCase):
         self.assertIsNone(rah.file_max_warning(32, "9223372036854775807\n"))
         self.assertIsNone(rah.file_max_warning(8, "2097152"))             # 8 threads fit
         self.assertIsNone(rah.file_max_warning(32, ""))                   # not Linux, or unreadable: say nothing
+
+
+class Sign300K(unittest.TestCase):
+    """The 300K joint statement (issue #76) and default-yes signing with opt-out (owner, 2026-11-27): signed only at
+    the moment a build first qualifies, with the setup yes on file, never without a terminal, never after an opt-out,
+    never retroactively."""
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(dir=TMP, prefix="s3-"))
+        self.home = self.tmp / "h"; self.home.mkdir()
+        self.folder = self.tmp / "g"
+        self.env = unittest.mock.patch.dict(os.environ, {"RAH_HOME": str(self.home), "RAH_NO_STATS": "1"})
+        self.env.start()
+        (self.home / "300k/logs").mkdir(parents=True)
+
+    def tearDown(self):
+        self.env.stop()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def build(self, whole=True, axioms=None):
+        axioms = FIVE if axioms is None else axioms
+        if self.folder.exists():
+            shutil.rmtree(self.folder)
+        fake_300k(self.folder, compiled=None if whole else {0, 1})
+        (self.home / "300k/logs/axioms.log").write_text(axioms if whole else "")
+
+    def main(self, *args, stdin="", tty=True):
+        import builtins
+        from unittest import mock
+        out, err = io.StringIO(), io.StringIO()
+        answers = iter(stdin.splitlines())
+        def fake_input(prompt=""):
+            print(prompt, end="")
+            try:
+                return next(answers)
+            except StopIteration:
+                raise EOFError
+        sin = io.StringIO(stdin); sin.isatty = lambda: tty
+        with mock.patch.object(builtins, "input", fake_input), mock.patch("sys.stdin", sin), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            unoff = [] if args[0] == "status" else ["--test-unofficial-folder"]
+            code = rah.main([*map(str, args), "--proof", "300k", "--folder", str(self.folder), *unoff])
+        return code, out.getvalue(), err.getvalue()
+
+    def ctx(self):
+        return rah.Ctx(types.SimpleNamespace(folder=str(self.folder), logs=None, proof="300k"))
+
+    def ask(self, answer, tty=True):
+        sin = io.StringIO(answer + "\n"); sin.isatty = lambda: tty
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), unittest.mock.patch("sys.stdin", sin), \
+                unittest.mock.patch("builtins.input", lambda prompt="": print(prompt, end="") or answer):
+            rah.ask_sign_when_done(self.ctx())
+        return out.getvalue()
+
+    def rec(self):
+        return json.loads(sorted((self.home / "300k/records").glob("*.json"))[-1].read_text())
+
+    def sign_errors(self):
+        return [e for e in rah.validate_record(self.rec()) if "sign_statement" in e or "keys" in e]
+
+    def test_statement_text_is_the_300k_one(self):
+        t = rah.statement_text("300k")
+        self.assertTrue(t.startswith("Riemann@home: a joint statement from independent builders of the 300K proof"))
+        self.assertIn("all 803 modules", t); self.assertIn("72fead10", t); self.assertNotIn("—", t)
+        self.assertNotEqual(t, rah.statement_text("17m"))
+
+    def test_sign_needs_a_whole_build_with_the_three_axioms(self):
+        self.build(whole=False)
+        code, out, err = self.main("sign", stdin="y\n")
+        self.assertEqual(code, 1); self.assertIn("needs the whole build", err)
+        self.build(axioms=FIVE.replace("Quot.sound]", "Quot.sound, sorryAx]"))
+        code, out, err = self.main("sign", stdin="y\n")
+        self.assertEqual(code, 1)
+        self.build()
+        code, out, err = self.main("sign", stdin="n\n")
+        self.assertEqual(code, 1); self.assertIn("not signed", out)
+        code, out, err = self.main("sign", stdin="y\n")
+        self.assertEqual(code, 0, err); self.assertIn("of the 300K proof", out)
+        self.assertIs(self.rec().get("sign_statement"), True); self.assertEqual(self.sign_errors(), [])
+        self.assertIn(rah.SHARE_TEXT["signed_300k"], out)
+        code, out, err = self.main("status")
+        self.assertIn("300K joint statement signed", out)
+
+    def test_cancel_withdraws_and_the_opt_out_persists(self):
+        self.build()
+        self.main("sign", stdin="y\n")
+        code, out, err = self.main("sign", "--cancel")
+        self.assertEqual(code, 0, err); self.assertIn("signature withdrawn", out)
+        self.assertIs(self.rec().get("sign_statement"), False, "the record says no, so the page drops them")
+        self.assertEqual(self.sign_errors(), [])
+        self.assertTrue(rah.sign_opted_out(self.ctx()))
+        self.ask("")                                          # setup again: no question, no yes
+        self.assertIsNone(rah.sign_when_done(self.ctx()))
+        self.main("record"); self.assertIs(self.rec().get("sign_statement"), False)
+        code, out, err = self.main("sign", stdin="y\n")       # signing again by hand is always possible
+        self.assertEqual(code, 0, err); self.assertIs(self.rec().get("sign_statement"), True)
+        self.assertFalse(rah.sign_opted_out(self.ctx()))
+
+    def test_default_yes_signs_at_the_moment_the_build_qualifies(self):
+        out = self.ask("")                                    # Enter
+        self.assertIn("[Y/n]", out); self.assertIn("of the 300K proof", out)
+        self.assertIn(rah.SIGN_DEFAULT_LINE, out)
+        self.assertTrue(rah.sign_when_done(self.ctx()))
+        self.build(whole=False); self.main("record")
+        self.assertNotIn("sign_statement", self.rec())
+        self.build(); code, out, err = self.main("record")
+        self.assertEqual(code, 0, err)
+        self.assertIs(self.rec().get("sign_statement"), True)
+        self.assertIn("You signed this statement. To withdraw: riemann-at-home sign --cancel --proof 300k", out)
+        self.assertIn("of the 300K proof", out)
+
+    def test_no_terminal_never_signs(self):
+        out = self.ask("y", tty=False)
+        self.assertIn("riemann-at-home sign --when-done --proof 300k", out)
+        self.assertIsNone(rah.sign_when_done(self.ctx()))
+        self.build(whole=False); self.main("record"); self.build(); self.main("record")
+        self.assertNotIn("sign_statement", self.rec())
+
+    def test_no_at_setup_or_no_sign_flag_is_an_opt_out(self):
+        self.ask("n")
+        self.assertTrue(rah.sign_opted_out(self.ctx())); self.assertIsNone(rah.sign_when_done(self.ctx()))
+        self.build(whole=False); self.main("record"); self.build(); self.main("record")
+        self.assertIs(self.rec().get("sign_statement"), False)
+        self.assertIn("--no-sign", rah.main.__code__.co_consts.__repr__() + Path(rah.__file__).read_text())
+
+    def test_not_retroactive(self):
+        self.build(); self.main("record")                    # already whole before the yes
+        self.ask("")
+        self.assertTrue(rah.sign_when_done(self.ctx()))
+        code, out, err = self.main("record")
+        self.assertNotIn("sign_statement", self.rec()); self.assertNotIn("You signed this statement", out)
+        self.assertNotIn("sign_statement", self.rec())
+
+
+class SignDefault17M(unittest.TestCase):
+    """17M: default yes at setup; signs when the export first matches; never on a build that already had Level 2;
+    never after an opt-out (owner, 2026-11-27). Uses Levels' stand-in exporter without re-running its tests."""
+    setUp, tearDown, main, latest_record = Levels.setUp, Levels.tearDown, Levels.main, Levels.latest_record
+    def ask(self, answer, tty=True):
+        sin = io.StringIO(answer + "\n"); sin.isatty = lambda: tty
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), unittest.mock.patch("sys.stdin", sin), \
+                unittest.mock.patch("builtins.input", lambda prompt="": print(prompt, end="") or answer):
+            rah.ask_sign_when_done(rah.Ctx(types.SimpleNamespace(folder=str(self.folder), logs=None)))
+        return out.getvalue()
+
+    def test_enter_is_yes_and_signs_at_the_first_match(self):
+        out = self.ask("")
+        self.assertIn("[Y/n]", out); self.assertIn(rah.SIGN_DEFAULT_LINE, out)
+        code, out, err = self.main("export", "--exporter", self.exporter)
+        self.assertEqual(code, 0, err); self.assertIs(self.latest_record().get("sign_statement"), True)
+        self.assertIn("You signed this statement. To withdraw: riemann-at-home sign --cancel", out)
+
+    def test_not_retroactive_on_a_build_that_already_matched(self):
+        code, out, err = self.main("export", "--exporter", self.exporter)
+        self.assertEqual(code, 0, err); self.assertNotIn("sign_statement", self.latest_record())
+        self.ask("")
+        code, out, err = self.main("export", "--exporter", self.exporter)   # the same build, exported again
+        self.assertEqual(code, 0, err); self.assertNotIn("sign_statement", self.latest_record())
+
+    def test_opt_out_wins(self):
+        self.ask("")
+        self.main("sign", "--cancel")
+        self.ask("")                                          # asked again: no, the opt-out stands
+        code, out, err = self.main("export", "--exporter", self.exporter)
+        self.assertEqual(code, 0, err); self.assertNotIn("sign_statement", self.latest_record())
+
+    def test_no_terminal_no_yes(self):
+        self.ask("y", tty=False)
+        code, out, err = self.main("export", "--exporter", self.exporter)
+        self.assertEqual(code, 0, err); self.assertNotIn("sign_statement", self.latest_record())
 
 
 class RealSubmit(unittest.TestCase):
@@ -1906,8 +2080,8 @@ class Proof300K(unittest.TestCase):
                                       now=rb.parse_ts("2026-11-26T00:00:00Z"))[0]
             self.assertEqual(rej, [])
 
-    def test_export_recheck_sign_are_17m_only(self):
-        for cmd in (["export"], ["recheck", "--nanoda"], ["sign"]):
+    def test_export_recheck_are_17m_only(self):
+        for cmd in (["export"], ["recheck", "--nanoda"]):
             r = cli(*cmd, "--proof", "300k", home=self.home, check=False)
             self.assertEqual(r.returncode, 1); self.assertIn("for the 17M proof only", r.stderr)
         r = cli("build", "--proof", "both", home=self.home, check=False)

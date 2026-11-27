@@ -139,8 +139,9 @@ PROOFS = {
 }
 DEFAULT_PROOF = "17m"                 # what a record, a folder or a command means when it does not say
 SHARED_KEYS = ("consent", "display", "submit", "proofs", "repo")   # the person's choices, not one build's
-LEVELS_ONLY_17M = ("export, recheck and sign are for the 17M proof only: the 300K proof has no reference export yet, "
-                   "so a whole 300K build whose five theorems use only the three standard axioms is its finish.")
+LEVELS_ONLY_17M = ("export and recheck are for the 17M proof only: the 300K proof has no reference export yet, "
+                   "so a whole 300K build whose five theorems use only the three standard axioms is its finish "
+                   "(and lets you sign the 300K statement: riemann-at-home sign --proof 300k).")
 
 
 def proof_of_folder(folder: Path):
@@ -867,7 +868,11 @@ def cmd_setup(ctx: Ctx, a):
     else:
         ctx.set_conf(proofs={"active": order[0], "next": order[1:]})
         nxt = "riemann-at-home build"
-    ask_consent(Ctx(a, proof=order[0]))
+    if getattr(a, "no_sign", False):              # opt out up front: never signed automatically
+        for pk in order:
+            set_sign_opt_out(Ctx(a, proof=pk), True)
+        print("not signing any joint statement automatically (you can still sign later: riemann-at-home sign)")
+    ask_consent(Ctx(a, proof=order[0]), order)
     print(f"ready. Next: {nxt}" + (f"   (when the {PROOFS[order[0]]['label']} build is done, the "
                                    f"{PROOFS[order[1]]['label']} build starts by itself)" if len(order) > 1 else ""))
 
@@ -1659,6 +1664,11 @@ def status_one(ctx: Ctx, a):
             print(f"level     whole {ctx.p['label']} proof built" + (", only the three standard axioms: this proof is "
                   "finished (it has no export step yet)" if sorted(pa) == sorted(EXPECTED_AXIOMS) else
                   f", but the axioms are not the expected {EXPECTED_AXIOMS}"))
+        if levels_state(ctx).get("sign_statement"):
+            print(f"statement {ctx.p['label']} joint statement signed")
+        elif sign_when_done(ctx):
+            print(f"statement {ctx.p['label']} joint statement signed in advance: takes effect when the build is whole "
+                  f"with the expected axioms (undo: riemann-at-home sign --cancel --proof {ctx.proof})")
         return 0
     ex = levels_state(ctx).get("export")
     if ex and ex.get("sha256") == EXPORT_SHA256:
@@ -1845,7 +1855,8 @@ def validate_record(rec: dict):
     if pk not in PROOFS or "proof" in rec and pk == DEFAULT_PROOF:   # 17M records never say "proof"
         return [f"proof {pk!r} is not one of {[k for k in PROOFS if k != DEFAULT_PROOF]} (17M records leave it out)"]
     P, keys = PROOFS[pk], record_keys(pk)
-    optional = OPTIONAL_KEYS if P["levels"] else [k for k in OPTIONAL_KEYS if k not in LEVEL_KEYS + PROGRESS_KEYS]
+    optional = OPTIONAL_KEYS if P["levels"] else [k for k in OPTIONAL_KEYS if k not in LEVEL_KEYS + PROGRESS_KEYS
+                                                  or k == "sign_statement"]   # 300K: its own statement (issue #76)
     extra = [k for k in rec if k not in keys]                  # a set of keys: order does not matter
     if (not set(keys) <= set(rec) or any(k not in optional for k in extra)
             or sum(k in rec for k in NAME_KEYS) > 1):
@@ -1929,12 +1940,25 @@ def validate_levels(rec: dict) -> list:
             errs.append('checkers must be a non-empty list of {"name", "version", "result": accept|reject, "seconds": int}')
         elif len({e["name"] for e in c}) != len(c):
             errs.append("checkers: one entry per checker")
-    if "sign_statement" in rec:
+    P = PROOFS.get(rec.get("proof", DEFAULT_PROOF)) or PROOFS[DEFAULT_PROOF]
+    if "sign_statement" in rec and rec["sign_statement"] is False and not P["levels"]:
+        pass                                      # 300K: an explicit opt-out (sign --cancel --proof 300k)
+    elif "sign_statement" in rec:
         if rec["sign_statement"] is not True:
             errs.append("sign_statement must be true when present")
-        if record_level(rec) < 2:
+        if not P["levels"]:
+            if not signable_without_levels(rec):
+                errs.append("sign_statement needs the whole proof with only the three standard axioms")
+        elif record_level(rec) < 2:
             errs.append("sign_statement needs Level 2 (whole proof and the reference export)")
     return errs
+
+
+def signable_without_levels(rec: dict) -> bool:
+    """A proof without an export reference (300K): its statement can be signed on a whole build whose theorems use
+    only the three standard axioms."""
+    ax = rec.get("axioms")
+    return rec.get("whole_proof") is True and isinstance(ax, list) and sorted(ax) == sorted(EXPECTED_AXIOMS)
 
 
 def record_level(rec: dict) -> int:
@@ -2218,7 +2242,7 @@ def need_consent(ctx: Ctx):
                    "\n\nTo agree: riemann-at-home submit --agree   (optionally --name \"Display Name\")")
 
 
-def ask_consent(ctx: Ctx):
+def ask_consent(ctx: Ctx, proofs=None):
     """End of setup: show what becomes public and ask once. In a terminal: y/N, then the name. Otherwise (an AI
     assistant running setup) print the notice and how to agree, so the person answers, not the assistant."""
     if has_consent(ctx):
@@ -2241,8 +2265,8 @@ def ask_consent(ctx: Ctx):
         return
     name = input("Name on the leaderboard (Enter = your GitHub username, or type a display name): ").strip()
     agree(ctx, name or None)
-    if ctx.p["levels"]:                           # the joint statement is about the 17M proof
-        ask_sign_when_done(ctx)
+    for pk in (proofs or [ctx.proof]):            # each proof has its own statement (300K since issue #76)
+        ask_sign_when_done(ctx if pk == ctx.proof else Ctx(argparse.Namespace(folder=None, logs=None), proof=pk))
     share_nudge(ctx, "joined")
 
 
@@ -2250,6 +2274,8 @@ SHARE_TEXT = {
     "joined": "I'm running a validator for the Riemann Hypothesis Lean proof in my spare CPU cycles. Join in:",
     "signed": "My computer built the whole Riemann Hypothesis Lean proof, reproduced the reference export, and I "
               "signed the joint statement. Run a validator too:",
+    "signed_300k": "My computer built the whole 300K-line Lean proof of the Riemann Hypothesis and Dirichlet GRH, "
+                   "and I signed the 300K joint statement. Run a validator too:",
 }
 
 
@@ -2279,37 +2305,75 @@ def share_nudge(ctx: Ctx, kind: str):
 
 
 def ask_sign_when_done(ctx: Ctx):
-    """Setup, after the posting yes (owner, 2026-11-23): sign the joint statement now, to take effect only if this
-    build finishes and its export matches the reference. In a terminal: y/N. Otherwise print how to agree."""
-    if sign_when_done(ctx):
+    """Setup, after the posting yes: sign this proof's joint statement now, to take effect only when the build
+    qualifies (17M: export matches the reference; 300K: whole with the three standard axioms). In a terminal the
+    answer defaults to yes ([Y/n], owner 2026-11-27); without one nothing is signed: it prints the statement and how
+    to agree, so the person sees what they would sign."""
+    if sign_when_done(ctx) or sign_opted_out(ctx):
         return
     import textwrap
-    print("\nOne more, optional. If your whole build finishes and your export matches the reference, do you want to "
-          "sign the joint statement?\n\n" + textwrap.fill(statement_text(), 100) + "\n")
+    when = ("your whole build finishes and your export matches the reference" if ctx.p["levels"] else
+            f"your whole {ctx.p['label']} build finishes with only the three standard axioms")
+    pa = "" if ctx.proof == DEFAULT_PROOF else f" --proof {ctx.proof}"
+    print(f"\nOne more. When {when}, do you want to sign the {'' if ctx.proof == DEFAULT_PROOF else ctx.p['label'] + ' '}"
+          "joint statement?\n\n" + textwrap.fill(statement_text(ctx.proof), 100) + "\n\n" + SIGN_DEFAULT_LINE + "\n")
     if not sys.stdin.isatty():
-        print("To sign it in advance: riemann-at-home sign --when-done   (it takes effect only if your export matches)\n"
+        print(f"To sign it in advance: riemann-at-home sign --when-done{pa}   (it takes effect only when {when})\n"
               "(If an AI assistant is running this: show the person this statement word for word and wait for their "
               "answer.)")
         return
     try:
-        yes = input("Sign it when your export matches? [y/N] ").strip().lower() in ("y", "yes")
+        no = input("Sign it when your build qualifies? [Y/n] ").strip().lower() in ("n", "no")
     except EOFError:
-        yes = False
-    if yes:
-        set_sign_when_done(ctx)
+        no = True                                 # no answer at all is not a yes
+    if no:
+        set_sign_opt_out(ctx, True)
+        print(f"Not signing. You can sign later: riemann-at-home sign{pa}")
     else:
-        print("Not signing in advance. You can sign later: riemann-at-home sign")
+        set_sign_when_done(ctx)
+
+
+SIGN_DEFAULT_LINE = ("Signing is on by default when your build qualifies; you see the statement first and can withdraw "
+                     "any time with riemann-at-home sign --cancel.")
+
+
+def sign_opted_out(ctx: Ctx) -> bool:
+    """The person said no (setup --no-sign, or sign --cancel): never sign for them automatically again."""
+    return bool(ctx.conf().get("sign_opt_out"))
+
+
+def set_sign_opt_out(ctx: Ctx, on: bool):
+    ctx.set_conf(sign_opt_out={"at": iso(time.time())} if on else None)
+    if on:
+        ctx.set_conf(sign_when_done=None)
+
+
+def cancel_hint(ctx: Ctx) -> str:
+    return "riemann-at-home sign --cancel" + ("" if ctx.proof == DEFAULT_PROOF else f" --proof {ctx.proof}")
+
+
+def announce_signed(ctx: Ctx):
+    """Said when the tool signs at the moment the build qualifies (default yes, owner 2026-11-27)."""
+    import textwrap
+    print("\n" + textwrap.fill(statement_text(ctx.proof), 100) + "\n\n"
+          f"You signed this statement. To withdraw: {cancel_hint(ctx)}")
 
 
 def sign_when_done(ctx: Ctx):
     """The advance yes, if it is for this exact statement text (a reworded statement needs a new yes)."""
     w = ctx.conf().get("sign_when_done") or {}
-    return w if w.get("statement_sha256") == hashlib.sha256(statement_text().encode()).hexdigest() else None
+    return w if w.get("statement_sha256") == hashlib.sha256(statement_text(ctx.proof).encode()).hexdigest() else None
 
 
 def set_sign_when_done(ctx: Ctx):
+    ctx.set_conf(sign_opt_out=None)               # an explicit yes replaces an earlier no
     ctx.set_conf(sign_when_done={"agreed": iso(time.time()),
-                                 "statement_sha256": hashlib.sha256(statement_text().encode()).hexdigest()})
+                                 "statement_sha256": hashlib.sha256(statement_text(ctx.proof).encode()).hexdigest()})
+    if not ctx.p["levels"]:
+        print(f"Signed in advance: when your {ctx.p['label']} build is whole and its axiom check shows only the three "
+              "standard axioms, your records carry the signature and the page lists it. Nothing is signed before "
+              f"then. Undo any time: riemann-at-home sign --cancel --proof {ctx.proof}")
+        return
     print("Signed in advance: when your export matches the reference, your records carry the signature and the "
           "leaderboard lists it. Nothing is signed before then. Undo any time: riemann-at-home sign --cancel")
 
@@ -2337,8 +2401,7 @@ def cmd_submit(ctx: Ctx, a):
     # every proof submits the same way (one PR per build); a 300K record says "proof": "300k" (CONTRACT "Several proofs")
     if getattr(a, "agree", False):
         agree(ctx, a.name, a.upstream)
-        if ctx.p["levels"]:
-            ask_sign_when_done(ctx)                 # the optional second question, as at setup (17M only)
+        ask_sign_when_done(ctx)                     # the second question, as at setup
         share_nudge(ctx, "joined")
         return 0
     if a.interval is not None:
@@ -2532,8 +2595,21 @@ def levels_state(ctx: Ctx, digest: str = None) -> dict:
 def level_fields(ctx: Ctx, rec: dict) -> dict:
     """The optional record fields earned so far. Only a reproduced export goes into a record (the bot rejects any
     other export hash); checkers and the signature only on top of that."""
-    if not rec.get("whole_proof") or not ctx.p["levels"]:
+    if not rec.get("whole_proof"):
         return {}
+    if not ctx.p["levels"]:                       # 300K: only its own statement's signature (issue #76)
+        if not signable_without_levels(rec):
+            return {}
+        if sign_opted_out(ctx):                   # said so in the record: the bot never lists them (issue #76)
+            return {"sign_statement": False}
+        lv = levels_state(ctx, rec["olean_digest"])
+        if lv.get("sign_statement") is not True and sign_when_done(ctx) and first_qualifying(ctx, rec):
+            # the setup yes takes effect at the moment the build first qualifies (never on a build that was
+            # already whole with the expected axioms before: not retroactive)
+            lv = {"build_id": rec["build_id"], "olean_digest": rec["olean_digest"], "sign_statement": True}
+            ctx.set_conf(levels=lv)
+            announce_signed(ctx)
+        return {"sign_statement": True} if lv.get("sign_statement") is True else {}
     out = {}
     ep = export_progress(ctx, rec["olean_digest"])
     if ep:
@@ -2548,6 +2624,16 @@ def level_fields(ctx: Ctx, rec: dict) -> dict:
     if lv.get("sign_statement") is True:
         out["sign_statement"] = True
     return out
+
+
+def first_qualifying(ctx: Ctx, rec: dict) -> bool:
+    """Is `rec` the moment this build first qualifies? Only if this build's last written record exists and did not
+    qualify yet. No earlier record: unknown, so no (never sign a build that may have qualified before)."""
+    try:
+        prev = json.loads(latest_record(ctx).read_text())
+    except (Fail, OSError, ValueError):
+        return False
+    return prev.get("build_id") == rec["build_id"] and not signable_without_levels(prev)
 
 
 def whole_build(ctx: Ctx, a, what: str) -> dict:
@@ -2968,7 +3054,10 @@ def cmd_export(ctx: Ctx, a):
     pf.write_text(json.dumps({**last, "done": True, "left_seconds": None, "updated": int(time.time())}) + "\n")
     peak = f", peak memory {last['peak_memory_gb']:,.0f} GB" if last.get("peak_memory_gb") else ""
     lv = levels_state(ctx, rec["olean_digest"])
-    advance = bool(sign_when_done(ctx)) and match
+    was_level2 = (lv.get("export") or {}).get("sha256") == EXPORT_SHA256
+    # sign only when the build first qualifies (not on a re-export of a build that already had Level 2), with the
+    # setup yes on file and no opt-out (default yes going forward, owner 2026-11-27; not retroactive)
+    advance = bool(sign_when_done(ctx)) and not sign_opted_out(ctx) and match and not was_level2
     same = (lv.get("export") or {}).get("sha256") == sha
     if not match and (lv.get("export") or {}).get("sha256") == EXPORT_SHA256:
         # an earlier export here matched: keep it (and Level 2, checkers, signature); this run is only reported
@@ -2989,8 +3078,7 @@ def cmd_export(ctx: Ctx, a):
         return 1
     print(f"export matches the reference ✓  ({fmt_dur(time.time() - t0)}{peak})")
     if advance:
-        print(f"Joint statement signed, as you chose at setup ({sign_when_done(ctx)['agreed'][:10]}). "
-              "Undo: riemann-at-home sign --cancel")
+        announce_signed(ctx)                      # the full text, and how to withdraw
     print("Level 2: matches the reference export (Andrew Sutherland, https://math.mit.edu/~drew/grh).")
     out = write_record(ctx, make_record(ctx, a))
     print(f"record with export_sha256: {out}")
@@ -3180,12 +3268,17 @@ def cmd_recheck(ctx: Ctx, a):
 README = Path(__file__).resolve().parent / "README.md"       # shipped next to this script
 
 
-def statement_text() -> str:
-    """The joint statement, word for word from the README's "## Joint statement" section."""
-    m = re.search(r"^## Joint statement[ \t]*\n(.*?)(?=^## |\Z)", read(README), re.M | re.S)
+STATEMENT_SECTIONS = {"17m": "Joint statement", "300k": "300K joint statement"}   # README headings, per proof
+
+
+def statement_text(proof: str = DEFAULT_PROOF) -> str:
+    """The proof's joint statement, word for word from its README section ("## Joint statement" for 17M,
+    "## 300K joint statement" for 300K, issue #76)."""
+    head = re.escape(STATEMENT_SECTIONS[proof])
+    m = re.search(rf"^## {head}[ \t]*\n(.*?)(?=^## |\Z)", read(README), re.M | re.S)
     text = " ".join(m[1].split()) if m else ""
     if not text.startswith("Riemann@home: a joint statement"):
-        raise Fail(f"the joint statement is missing from {README} (it ships next to this tool)")
+        raise Fail(f"the {PROOFS[proof]['label']} joint statement is missing from {README} (it ships next to this tool)")
     return text
 
 
@@ -3193,23 +3286,29 @@ def cmd_sign(ctx: Ctx, a):
     """Sign the joint statement: allowed at Level 2 or 3. Shows the text and asks first.
     --when-done: sign in advance, taking effect only when the export matches. --cancel: take back either."""
     if getattr(a, "cancel", False):
-        ctx.set_conf(sign_when_done=None)
+        set_sign_opt_out(ctx, True)               # also clears the advance yes; never signed automatically again
         lvc = ctx.conf().get("levels")
-        if lvc and lvc.get("sign_statement"):
+        signed = bool(lvc and lvc.get("sign_statement"))
+        if signed:
             lvc["sign_statement"] = False
             ctx.set_conf(levels=lvc)
-            write_record(ctx, make_record(ctx, a))
-            print("signature withdrawn: new records no longer carry it")
-            send_now(ctx, a, "signature withdrawn")
-        else:
-            print("not signed in advance any more")
+        if signed or not ctx.p["levels"]:         # 300K records say false, so the page drops them (issue #76)
+            try:
+                write_record(ctx, make_record(ctx, a))
+                send_now(ctx, a, "signature withdrawn")
+            except Fail:
+                pass                              # no build here yet: the opt-out still holds for later records
+        print("signature withdrawn: new records no longer carry it" if signed else
+              "not signing: nothing will be signed for you automatically")
         return 0
     if getattr(a, "when_done", False):
         import textwrap
-        print("\n" + textwrap.fill(statement_text(), 100) + "\n")
+        print("\n" + textwrap.fill(statement_text(ctx.proof), 100) + "\n")
         if sys.stdin.isatty():
+            ask = ("Sign it when your export matches? [y/N] " if ctx.p["levels"] else
+                   f"Sign it when your {ctx.p['label']} build is whole with the expected axioms? [y/N] ")
             try:
-                if input("Sign it when your export matches? [y/N] ").strip().lower() not in ("y", "yes"):
+                if input(ask).strip().lower() not in ("y", "yes"):
                     print("not signed in advance")
                     return 1
             except EOFError:
@@ -3217,13 +3316,15 @@ def cmd_sign(ctx: Ctx, a):
                 return 1
         set_sign_when_done(ctx)
         return 0
-    rec = whole_build(ctx, a, "signing")
-    if record_level(rec) < 2:
+    rec = whole_build(ctx, a, "signing")        # whole, with exactly the three standard axioms
+    if ctx.p["levels"] and record_level(rec) < 2:
         raise Fail("signing needs Level 2: a whole build whose export reproduces the reference "
                    "(run `riemann-at-home export`)")
     import textwrap
-    print("\n" + textwrap.fill(statement_text(), 100) + "\n")
-    print(f"You are at Level {record_level(rec)}. Your signature is your own report, tied to your GitHub account.")
+    print("\n" + textwrap.fill(statement_text(ctx.proof), 100) + "\n")
+    print((f"You are at Level {record_level(rec)}." if ctx.p["levels"] else
+           f"You built the whole {ctx.p['label']} proof, and its theorems use only the three standard axioms.")
+          + " Your signature is your own report, tied to your GitHub account.")
     try:
         yes = input("Sign this statement? [y/N] ").strip().lower() in ("y", "yes")
     except EOFError:
@@ -3231,13 +3332,14 @@ def cmd_sign(ctx: Ctx, a):
     if not yes:
         print("not signed")
         return 1
-    lv = levels_state(ctx, rec["olean_digest"])
+    ctx.set_conf(sign_opt_out=None)               # an explicit signature replaces an earlier no
+    lv = levels_state(ctx, rec["olean_digest"]) or {"build_id": rec["build_id"], "olean_digest": rec["olean_digest"]}
     lv["sign_statement"] = True
     ctx.set_conf(levels=lv)
     out = write_record(ctx, make_record(ctx, a))
     print(f"signed: records now carry \"sign_statement\": true\n{out}")
     send_now(ctx, a, "signed")
-    share_nudge(ctx, "signed")
+    share_nudge(ctx, "signed" if ctx.p["levels"] else "signed_300k")
     return 0
 
 
@@ -3587,6 +3689,8 @@ def main(argv=None):
     s.add_argument("--skip-cache", action="store_true", help=argparse.SUPPRESS)
     s.add_argument("--force-cache", action="store_true", help=argparse.SUPPRESS)
     s.add_argument("--source-url", help=argparse.SUPPRESS)        # testing: clone the 300K source from here
+    s.add_argument("--no-sign", action="store_true",
+                   help="never sign a joint statement automatically (signing is on by default when a build qualifies)")
     for name, h in (("build", "start the official build in the background, or change its speed"),
                     ("resume", "continue a paused build (or start a stopped one)")):
         b = sub.add_parser(name, parents=[hidden], help=h)
@@ -3674,7 +3778,7 @@ def main(argv=None):
         if a.proof == "both" and a.cmd != "setup":
             raise Fail("--proof both is for setup only; other commands take --proof 300k or --proof 17m")
         ctx = Ctx(a)
-        if a.cmd in ("export", "recheck", "sign") and not ctx.p["levels"]:
+        if a.cmd in ("export", "recheck") and not ctx.p["levels"]:
             raise Fail(LEVELS_ONLY_17M + (" (This computer's default is the 300K proof; for the 17M one add --proof 17m.)"
                                           if getattr(a, "proof", None) is None else ""))
         fn = {"setup": cmd_setup, "build": cmd_build, "pause": cmd_pause, "resume": cmd_resume, "stop": cmd_stop,

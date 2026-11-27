@@ -37,6 +37,8 @@ HERE = Path(__file__).resolve().parent
 # Renamed GitHub accounts: {"old-login": "new-login"}. GitHub moves a renamed account's PRs to the new login, but the
 # files stay under submissions/<old-login>/. With an entry here the old folder counts as the new login: one person,
 # one leaderboard row, and updates from the old PRs are still accepted. Added on the person's own request.
+# People who asked (by comment) not to be listed on the 300K statement: GitHub logins, lowercase (issue #76)
+OPTOUT = {x.lower() for x in (json.loads((HERE / "optout.json").read_text()) if (HERE / "optout.json").exists() else [])}
 RENAMED = {k.lower(): v for k, v in (json.loads((HERE / "renamed.json").read_text()) if (HERE / "renamed.json").exists() else {}).items()}
 
 
@@ -291,6 +293,12 @@ def display_name_problems(rec, author, logins, prev=None):
     return out
 
 
+def signs_300k(rec) -> bool:
+    """A 300K record that qualifies for its statement: whole, its theorems using only the three standard axioms."""
+    ax = rec.get("axioms")
+    return bool(rec.get("whole_proof")) and isinstance(ax, list) and sorted(ax) == sorted(EXPECTED_AXIOMS)
+
+
 def record_level(rec) -> int:
     """1 build; 2 whole proof + reference export reproduced; 3 = 2 + a known independent checker accepted it."""
     if not (rec.get("whole_proof") and str(rec.get("export_sha256", "")).lower() == REF_EXPORT_SHA256
@@ -313,7 +321,8 @@ def check_record(rec, author: str, repo_path: str, prev, check_digest=False, now
         return [f"proof {pk!r} is not one of {sorted(PROOFS)}"], flags, None
     P = PROOFS[pk]
     fields = {**FIELDS, P["source_field"]: str}        # 17M: archive_sha256; 300K: source_commit
-    optional = OPTIONAL if P["levels"] else {k: t for k, t in OPTIONAL.items() if k not in LEVEL_FIELDS}
+    optional = OPTIONAL if P["levels"] else {k: t for k, t in OPTIONAL.items()
+                                             if k not in LEVEL_FIELDS or k == "sign_statement"}   # 300K statement (#76)
     missing = [k for k in fields if k not in rec]
     if "anonymous" in rec:                             # dropped: the pull request always shows the GitHub username
         rej.append("anonymous is not offered: your pull request always shows your GitHub username. "
@@ -431,7 +440,10 @@ def check_record(rec, author: str, repo_path: str, prev, check_digest=False, now
                 return False
         if len(cr) > CRASHES_MAX or not all(crash_ok(c) for c in cr):
             rej.append(f"crashes must be at most {CRASHES_MAX} {{module, code, at}} entries")
-    if rec.get("sign_statement") and record_level(rec) < 2:
+    if not P["levels"]:
+        if rec.get("sign_statement") is True and not signs_300k(rec):
+            rej.append("sign_statement needs the whole proof with only the three standard axioms")
+    elif rec.get("sign_statement") and record_level(rec) < 2:
         rej.append("sign_statement needs Level 2 (whole proof and the reference export reproduced)")
     # growth + speed against this build's last accepted record
     prev_raw, since = None, started
@@ -522,6 +534,9 @@ def tier_of(finished: list) -> str:
     return "+".join(finished) if finished else "partial"
 
 
+SIG300 = "#300k"                                       # signed_map key suffix: the 300K statement's signing time
+
+
 def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> dict:
     """signed_map: login -> time their signing version was accepted (the bot records it); people missing from it get
     the signing record's `recorded` time (aggregate without the bot's ledger).
@@ -546,7 +561,7 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
                 else: e[k] = min(e.get(k) or t, t)
         if old in signed_map:
             t = signed_map.pop(old); signed_map[new] = min(signed_map.get(new) or t, t)
-    signatures = []
+    signatures, signatures_300k = [], []
     mods = modules()
     people = {}
     for (login, build_id), v in load_accepted(dirs, now=now).items():
@@ -575,6 +590,11 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
             login = by_key.get(g.get("who") or g.get("name"))
             if login and g.get("signed"):
                 signed_map[login] = min(signed_map.get(login) or g["signed"], g["signed"])
+        for g in published.get("signatures_300k") or []:
+            login = by_key.get(g.get("who") or g.get("name"))
+            if login and g.get("signed") and not g.get("via"):   # self-signed times only
+                k = login + SIG300
+                signed_map[k] = min(signed_map.get(k) or g["signed"], g["signed"])
     counts = bytearray(N)                              # terrain: the 17M proof's modules
     rows, latest, running, crashes = [], None, [], {}
     for who, builds in sorted(people.items()):
@@ -619,6 +639,22 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
             signatures.append({"who": shown, "name": name, "signed": signed_map[who], "machine": mach(signing[0]),
                                "level": level, "checkers": sorted({c["name"] for r in recs for c in r.get("checkers") or []
                                                                    if c.get("result") == "accept" and c.get("name") in KNOWN_CHECKERS})})
+        r3 = [v[1] for v in by_proof.get("300k", {}).values()]
+        if r3 and canon(who).lower() not in OPTOUT:
+            # 300K statement (issue #76): self-signed, or (owner, 2026-11-27) listed from a whole build with the
+            # three standard axioms; an explicit false in their newest 300K record (sign --cancel) always wins
+            newest = max(r3, key=lambda r: r["recorded"])
+            own = sorted((r for r in r3 if r.get("sign_statement") is True and signs_300k(r)), key=lambda r: r["recorded"])
+            ok = sorted((r for r in r3 if signs_300k(r)), key=lambda r: r["recorded"])
+            if newest.get("sign_statement") is not False and (own or ok):
+                e = {"who": shown, "name": name, "machine": mach((own or ok)[0])}
+                if own and newest.get("sign_statement") is True:
+                    signed_map.setdefault(who + SIG300, own[0]["recorded"])
+                    e["signed"] = signed_map[who + SIG300]
+                else:
+                    e["signed"] = mine.get(ledger_keys("300k")[0]) or ok[0]["recorded"]
+                    e["via"] = "record"            # added from their build record, not signed by them
+                signatures_300k.append(e)
         finished = [pk for pk in PROOFS if (proofs.get(pk) or {}).get("whole")]
         rows.append({"name": name, "who": shown, "_login": who, "level": level, "modules": p17.get("modules", 0),
                      "whole_proof": whole,
@@ -698,6 +734,7 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
         "running": sorted(running, key=lambda x: (-x["modules"] / PROOFS[x.get("proof", DEFAULT_PROOF)]["n"],
                                                   x["recorded"], x["name"], x.get("build_id", ""))),
         "signatures": sorted(signatures, key=lambda x: (x["signed"], x["name"])),
+        "signatures_300k": sorted(signatures_300k, key=lambda x: (x["signed"], x["name"])),
         "validated": VALIDATED,
         # Lean crashes reported by builds (the tool restarts a crashed build): which module, how often, for whom
         "crashes": sorted(({**c, "codes": sorted(c["codes"]), "names": sorted(c["names"])} for c in crashes.values()),
@@ -728,9 +765,15 @@ def _page_parts(index_html: str):
     import html as _html
     m = re.search(r"const prompt = `(.*?)`;", index_html, re.S)
     prompt = m[1].strip() if m else ""
+    return prompt, _statement_md(index_html, '<div class="stmt">', '<div class="sofar"')
+
+
+def _statement_md(index_html: str, start: str, end: str) -> str:
+    """A joint statement panel of the homepage as markdown (the 17M one, or the 300K one: issue #76)."""
+    import html as _html
     stmt = ""
-    i = index_html.find('<div class="stmt">')
-    j = index_html.find('<div class="sofar"', i)
+    i = index_html.find(start)
+    j = index_html.find(end, i)
     if i >= 0 and j > i:
         t = index_html[i:j]
         t = re.sub(r"<code>(.*?)</code>", r"`\1`", t)
@@ -742,7 +785,7 @@ def _page_parts(index_html: str):
         t = re.sub(r"<[^>]+>", "", t)
         stmt = re.sub(r"\n[ \t]*\n[\s]*", "\n\n", _html.unescape(t)).strip()
         stmt = re.sub(r"\n\n(\d+\. )", r"\n\1", stmt)
-    return prompt, stmt
+    return stmt
 
 
 def _confused_md(index_html: str) -> str:
@@ -862,6 +905,14 @@ def homepage_markdown(data: dict, index_html: str) -> str:
         sigs = data.get("signatures") or []
         out += ["", "## Joint statement", "", stmt, "", f"Signatures so far: {len(sigs)}."]
         out += [f"- {g.get('name') or g.get('who')}, signed {str(g.get('signed', ''))[:10]}" for g in sigs]
+    stmt3 = _statement_md(index_html, '<div class="stmt s300">', '<div class="sofar s300"')
+    if stmt3:
+        s3 = data.get("signatures_300k") or []
+        out += ["", "## 300K joint statement", "", stmt3, "", f"Signatures so far: {len(s3)}."]
+        out += [f"- {g.get('name') or g.get('who')}, " + (f"finished {str(g.get('signed', ''))[:10]} (added from their "
+                "build record)" if g.get("via") == "record" else f"signed {str(g.get('signed', ''))[:10]}") for g in s3]
+        out += ["", "Builders who finished before signing existed were added from their build records; to be removed, "
+                "run `riemann-at-home sign --cancel --proof 300k` or ask in an issue."]
     confused = _confused_md(index_html)
     if confused:
         out += ["", confused]
@@ -1201,6 +1252,9 @@ def cmd_poll(a):
                 if rec.get("sign_statement") and record_level(rec) >= 2:
                     st.signed.setdefault(author, rec["recorded"] if rebuilding           # acceptance time unknown after total loss
                                          else now.strftime("%Y-%m-%dT%H:%M:%SZ"))   # time the signing version was accepted
+                if proof_of(rec) == "300k" and rec.get("sign_statement") is True and signs_300k(rec):
+                    st.signed.setdefault(author + SIG300, rec["recorded"] if rebuilding
+                                         else now.strftime("%Y-%m-%dT%H:%M:%SZ"))
                 if s.get("last_comment"):   # it was rejected before: say so on the PR, once
                     src.comment(pr, f"Your latest version ({rec['modules_compiled']:,} modules) was accepted and is on the "
                                     "leaderboard. The earlier rejections above no longer apply.\n\n(rahbot)")
