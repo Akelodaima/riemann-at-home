@@ -229,7 +229,18 @@ Mathlib's RiemannHypothesis; proved theorem is exactly that statement) are their
 - data.json: leaderboard rows and running entries get `"export"`: the same numbers plus `"total"` (reference bytes)
   and, once done, `"matches"`, which the bot decides from `export_sha256` (Level 2), never from the record.
   A whole-proof build whose export is in progress is listed in `running`.
-- Known tools: "riemann-at-home 1.0.0", "riemann-at-home 1.1.0".
+- Known tools: "riemann-at-home 1.0.0", "riemann-at-home 1.1.0", "riemann-at-home 1.2.0" (see "Tool 1.2.0").
+
+## Tool 1.2.0 (2026-11-28)
+
+- The version now changes when export features change, so records show which tool made them (ops #64, asked on
+  issue #24). 1.2.0 is the first tool with `--fast-exit` on by default and `--parallel` listed.
+- Records with `export_sha256` may also carry `"export_exporter"`: the exporter that ran, `"lean4export <tag>"`, or
+  `"lean4export <tag> + parallel <commit8>"` with `--parallel`; and `"export_fast_exit"`: true when the exporter's
+  fast exit was on (the default; `--no-fast-exit` turns it off; the parallel exporter has none, so false there).
+  Both are optional, 17M and 300K alike, and refused without `export_sha256`. Older records without them are fine.
+- The tool and the bot accept records from any known tool, so a saved 1.1.0 record can still be submitted after
+  `update`.
 
 ## Build crashes (2026-11-23)
 

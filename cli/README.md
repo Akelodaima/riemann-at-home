@@ -67,7 +67,8 @@ one pull request per build, on the same leaderboard.
   sha256 and a byte counter: the ~61 GB export is never written to disk. The reference export (Andrew Sutherland,
   https://math.mit.edu/~drew/grh) is 61,570,595,788 bytes with sha256
   `5ea74b912147c5c93cc2b6d70cc727cf908df2f62ac6a20480a3fa02f6be244e`. A match puts `export_sha256` and
-  `export_bytes` into the records. Until a whole build has reproduced it, the exact exporter invocation is
+  `export_bytes` into the records, and since tool 1.2.0 also `export_exporter` (which exporter ran) and
+  `export_fast_exit` (whether fast exit was on). Until a whole build has reproduced it, the exact exporter invocation is
   unverified, and the tool says so when the hash does not match.
   Fast exit (on by default): export builds its copy of lean4export with two lines added after its last write (flush,
   then exit), so it skips freeing its cache one object at a time, which took hours at "99%" on computers short of

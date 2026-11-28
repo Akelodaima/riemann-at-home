@@ -147,7 +147,7 @@ class Fast(unittest.TestCase):
         rec = json.loads(text)
         assert_private(self, text)
         self.assertEqual(rec["format"], "rah/build/1")
-        self.assertEqual(rec["tool"], "riemann-at-home 1.1.0")
+        self.assertEqual(rec["tool"], rah.TOOL)
         self.assertEqual(rec["build_folder"], "unofficial")
         self.assertEqual(rec["modules_compiled"], 7)
         self.assertEqual(rec["busy_seconds"], 3600)
@@ -2421,6 +2421,67 @@ class Proof300K(unittest.TestCase):
         self.assertEqual(len(mods), 803)
         self.assertEqual(hashlib.sha256(("\n".join(mods) + "\n").encode()).hexdigest(), rah.PROOFS["300k"]["modules_sha256"])
 
+
+
+# ---- tool 1.2.0 (owner, ops #64, 2026-11-28): the version changes with the export features, records say which
+# exporter ran and whether fast exit was on, and a saved record from an older 1.x tool can still be submitted.
+class Version120(unittest.TestCase):
+    def test_version_is_1_2_0(self):
+        self.assertEqual(rah.VERSION, "1.2.0")
+        self.assertEqual(rah.TOOL, "riemann-at-home 1.2.0")
+
+    def test_validate_accepts_older_1x_tools_only(self):
+        rec = {"tool": "riemann-at-home 1.1.0"}
+        errs = [e for e in rah.validate_record(rec) if e.startswith("tool is")]
+        self.assertEqual(errs, [], "a saved 1.1.0 record must still be submittable")
+        for bad in ("riemann-at-home 0.9.0", "riemann-at-home 9.9.9", "other 1.1.0", None):
+            errs = [e for e in rah.validate_record({"tool": bad}) if e.startswith("tool is")]
+            self.assertTrue(errs, f"{bad!r} must be refused")
+
+    def test_validate_levels_export_option_fields(self):
+        base = {"whole_proof": True, "axioms": list(rah.EXPECTED_AXIOMS), "proof": "300k",
+                "export_sha256": "a" * 64, "export_bytes": 10}
+        ok = {**base, "export_exporter": "lean4export v4.35.0", "export_fast_exit": True}
+        self.assertEqual(rah.validate_levels(ok), [])
+        par = {**base, "export_exporter": "lean4export v4.33.0 + parallel 73d9ad9b", "export_fast_exit": False}
+        self.assertEqual(rah.validate_levels(par), [])
+        self.assertTrue(rah.validate_levels({"whole_proof": True, "axioms": list(rah.EXPECTED_AXIOMS),
+                                             "export_fast_exit": True}), "needs export_sha256")
+        self.assertTrue(rah.validate_levels({**base, "export_fast_exit": "yes"}))
+        self.assertTrue(rah.validate_levels({**base, "export_exporter": 5}))
+        self.assertTrue(rah.validate_levels({**base, "export_exporter": "rm -rf /"}))
+
+
+def _v120_17m_record_carries_export_options(self):
+    code, out, err = self.main("export", "--exporter", self.exporter)
+    self.assertEqual(code, 0, err)
+    rec = self.latest_record()
+    self.assertEqual(rec["tool"], "riemann-at-home 1.2.0")
+    self.assertEqual(rec.get("export_exporter"), rah.exporter_name(types.SimpleNamespace()))
+    self.assertIs(rec.get("export_fast_exit"), True)
+    from unittest import mock
+    with mock.patch.object(rah, "EXPORT_SHA256", self.sha):
+        self.assertEqual(rah.validate_levels(rec), [])
+    self.assertEqual([e for e in rah.validate_record(rec) if "keys" in e], [])
+    code, out, err = self.main("export", "--exporter", self.exporter, "--no-fast-exit")
+    self.assertEqual(code, 0, err)
+    self.assertIs(self.latest_record().get("export_fast_exit"), False)
+
+
+def _v120_300k_record_carries_export_options(self):
+    self.build()
+    sha = hashlib.sha256(self.OUT).hexdigest()
+    with unittest.mock.patch.dict(rah.PROOFS["300k"], {"export_sha256": sha, "export_bytes": len(self.OUT)}):
+        code, out, err = self.export()
+    self.assertEqual(code, 0, err)
+    rec = self.rec()
+    self.assertEqual(rec.get("export_exporter"), "lean4export " + rah.PROOFS["300k"]["exporter_tag"])
+    self.assertIs(rec.get("export_fast_exit"), True)
+    self.assertEqual([e for e in rah.validate_record(rec) if "export" in e or "keys" in e], [])
+
+
+Levels.test_v120_17m_record_carries_export_options = _v120_17m_record_carries_export_options
+Export300K.test_v120_300k_record_carries_export_options = _v120_300k_record_carries_export_options
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

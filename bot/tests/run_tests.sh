@@ -196,6 +196,8 @@ print "=== the 300K proof's optional export: hashes gathered, badge only with a 
 python3 -I tests/check_export300k.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 print "=== 300K export reference pinned"
 python3 -I tests/check_pin300k.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
+print "=== tool 1.2.0: known tool, export_exporter / export_fast_exit (ops #64)"
+python3 -I tests/check_v120.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 print
 print "=== a renamed GitHub account: one row, old-login PRs still accepted (2026-11-26)"
 python3 -I tests/check_renamed.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }

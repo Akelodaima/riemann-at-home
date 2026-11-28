@@ -22,8 +22,10 @@ import secrets, unicodedata, shutil, signal, socket, subprocess, sys, tarfile, t
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 TOOL = f"riemann-at-home {VERSION}"
+# a saved record from an older 1.x tool can still be submitted (ops #64, 2026-11-28); the bot knows the same list
+KNOWN_TOOLS = ("riemann-at-home 1.0.0", "riemann-at-home 1.1.0", TOOL)
 FORMAT = "rah/build/1"
 ARCHIVE_SHA256 = "9631b4f020199e580ba86178cb56c6e9b09f690c2369a80dc4334aa93f49c7fc"
 ARCHIVE_BYTES = 239275554
@@ -38,9 +40,11 @@ RECORD_KEYS = ["format", "tool", "archive_sha256", "toolchain", "mathlib_rev", "
                "recorded", "busy_seconds", "modules_compiled", "bitmap_b64", "olean_digest", "whole_proof", "axioms", "final"]
 NAME_KEYS = ["display_name"]                    # only when the volunteer chose one (`name`)
 LEVEL_KEYS = ["export_sha256", "export_bytes", "checkers", "sign_statement"]   # Levels 2-3 and the joint statement
+EXPORT_INFO_KEYS = ["export_exporter", "export_fast_exit"]  # which exporter ran, fast exit on or off (tool 1.2.0)
+EXPORTER_RE = re.compile(r"lean4export v[0-9][0-9A-Za-z.\-]{0,30}( \+ parallel [0-9a-f]{8})?")
 PROGRESS_KEYS = ["export_progress"]           # how far `export` got: shown on the leaderboard while it runs
 CRASH_KEYS = ["crashes"]                       # Lean crashes during the build: which module, so we learn why
-OPTIONAL_KEYS = NAME_KEYS + LEVEL_KEYS + PROGRESS_KEYS + CRASH_KEYS
+OPTIONAL_KEYS = NAME_KEYS + LEVEL_KEYS + EXPORT_INFO_KEYS + PROGRESS_KEYS + CRASH_KEYS
 CRASHES_MAX = 20
 EXPORT_PROGRESS_FIELDS = ["bytes", "seconds", "left_seconds", "peak_memory_gb", "done"]
 EXPORT_STALE = 1800                             # an unfinished export not heard from in 30 min is dropped from records
@@ -2008,8 +2012,8 @@ def validate_record(rec: dict):
         errs.append("build_id must be 16 lowercase hex chars")
     if rec.get("build_folder") not in P["folders"].values():
         errs.append(f"build_folder {rec.get('build_folder')!r} is not a fixed folder")
-    if rec.get("tool") != TOOL:
-        errs.append(f"tool is {rec.get('tool')!r}, expected {TOOL!r}")
+    if rec.get("tool") not in KNOWN_TOOLS:
+        errs.append(f"tool is {rec.get('tool')!r}, expected one of {list(KNOWN_TOOLS)}")
     m = rec.get("machine")
     if not (isinstance(m, dict) and set(m) == {"os", "arch", "cpu", "cores"}
             and all(isinstance(m[k], str) for k in ("os", "arch", "cpu")) and type(m["cores"]) is int):
@@ -2060,6 +2064,14 @@ def validate_levels(rec: dict) -> list:
             errs.append("export_sha256 must be 64 lowercase hex characters")
         if not (type(rec.get("export_bytes")) is int and rec["export_bytes"] >= 0):
             errs.append("export_bytes must be a non-negative integer")
+    if any(k in rec for k in EXPORT_INFO_KEYS):
+        if "export_sha256" not in rec:
+            errs.append("export_exporter and export_fast_exit need export_sha256")
+        if "export_exporter" in rec and not (isinstance(rec["export_exporter"], str)
+                                            and EXPORTER_RE.fullmatch(rec["export_exporter"])):
+            errs.append("export_exporter must be 'lean4export <tag>', optionally '+ parallel <commit8>'")
+        if "export_fast_exit" in rec and not isinstance(rec["export_fast_exit"], bool):
+            errs.append("export_fast_exit must be true or false")
     if "checkers" in rec:
         c = rec["checkers"]
         if not has_export:
@@ -2740,7 +2752,7 @@ def level_fields(ctx: Ctx, rec: dict) -> dict:
     if not ctx.p["levels"]:                       # 300K: its optional export's hash, whatever it was
         ex = (levels_state(ctx, rec["olean_digest"]).get("export") or {})
         if re.fullmatch(r"[0-9a-f]{64}", str(ex.get("sha256"))) and type(ex.get("bytes")) is int:
-            sig = {**sig, "export_sha256": ex["sha256"], "export_bytes": ex["bytes"]}
+            sig = {**sig, "export_sha256": ex["sha256"], "export_bytes": ex["bytes"], **export_info(ex)}
         return sig
     out = dict(sig)
     ep = export_progress(ctx, rec["olean_digest"])
@@ -2750,7 +2762,7 @@ def level_fields(ctx: Ctx, rec: dict) -> dict:
     ex = lv.get("export") or {}
     if ex.get("sha256") != EXPORT_SHA256:
         return out
-    out.update({"export_sha256": ex["sha256"], "export_bytes": ex["bytes"]})
+    out.update({"export_sha256": ex["sha256"], "export_bytes": ex["bytes"], **export_info(ex)})
     if lv.get("checkers"):
         out["checkers"] = lv["checkers"]
     return out
@@ -2866,6 +2878,21 @@ def apply_parallel(src: Path):
         raise Fail("the parallel exporter's Export/Par.lean is not the one the cleanup fix fits; "
                    "run export without --parallel")
     par.write_text(patched)
+
+
+def export_fast_exit(a) -> bool:
+    """Was the exporter's fast exit on? The same rule exporter_command uses (the parallel exporter has none)."""
+    return bool(getattr(a, "fast_exit", False)) and not bool(getattr(a, "parallel", False))
+
+
+def export_info(ex: dict) -> dict:
+    """The record's export_exporter / export_fast_exit from a saved export result (older results may lack them)."""
+    out = {}
+    if isinstance(ex.get("exporter"), str) and EXPORTER_RE.fullmatch(ex["exporter"]):
+        out["export_exporter"] = ex["exporter"]
+    if isinstance(ex.get("fast_exit"), bool):
+        out["export_fast_exit"] = ex["fast_exit"]
+    return out
 
 
 def exporter_name(a, ctx=None) -> str:
@@ -3203,6 +3230,7 @@ def cmd_export(ctx: Ctx, a):
     else:
         ctx.set_conf(levels={"build_id": rec["build_id"], "olean_digest": rec["olean_digest"],
                              "export": {"sha256": sha, "bytes": n, "exporter": exporter_name(a),
+                                        "fast_exit": export_fast_exit(a),
                                         "seconds": int(time.time() - t0), "when": iso(time.time())},
                              "checkers": lv.get("checkers", []) if same else [],
                              "sign_statement": (bool(lv.get("sign_statement")) and same or advance) and match})
@@ -3247,7 +3275,7 @@ def export_without_levels(ctx: Ctx, a):
     if rc != 0:
         raise Fail(f"the exporter exited with {rc}; see {log}")
     lv = levels_state(ctx, rec["olean_digest"]) or {"build_id": rec["build_id"], "olean_digest": rec["olean_digest"]}
-    lv = {**lv, "export": {"sha256": sha, "bytes": n, "exporter": exporter_name(a, ctx),
+    lv = {**lv, "export": {"sha256": sha, "bytes": n, "exporter": exporter_name(a, ctx), "fast_exit": export_fast_exit(a),
                            "seconds": int(time.time() - t0), "when": iso(time.time())}}
     ctx.set_conf(levels=lv)
     print(f"export sha256 {sha}\nexport bytes  {n:,}\ntook          {fmt_dur(time.time() - t0)}")

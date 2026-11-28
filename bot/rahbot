@@ -52,7 +52,7 @@ def canon(login: str) -> str:
 
 # ---- CONTRACT constants -------------------------------------------------------------------------------------
 FORMAT = "rah/build/1"
-KNOWN_TOOLS = {"riemann-at-home 1.0.0", "riemann-at-home 1.1.0"}
+KNOWN_TOOLS = {"riemann-at-home 1.0.0", "riemann-at-home 1.1.0", "riemann-at-home 1.2.0"}   # 1.2.0: ops #64
 ARCHIVE_SHA256 = "9631b4f020199e580ba86178cb56c6e9b09f690c2369a80dc4334aa93f49c7fc"
 TOOLCHAIN = "leanprover/lean4:v4.33.1"
 MATHLIB_REV = "0df444a360eaa60ab8c11dca51a86af692955474"
@@ -79,12 +79,15 @@ REF_EXPORT_BYTES = 61_570_595_788
 KNOWN_CHECKERS = {"nanoda", "con-leche", "lean4checker", "lean4lean"}
 BACKUPS_KEPT = 20
 OPTIONAL = {"export_sha256": str, "export_bytes": int, "checkers": list, "sign_statement": bool,
+            "export_exporter": str,   # tool 1.2.0: which exporter ran ("lean4export <tag>[ + parallel <commit8>]")
+            "export_fast_exit": bool, # tool 1.2.0: was the exporter's fast exit on
             "final": bool,           # set by `riemann-at-home finish`
             "display_name": str,     # shown instead of the login (CONTRACT "Display names")
             "export_progress": dict,  # how far `riemann-at-home export` got (CONTRACT "Export progress")
             "crashes": list,          # Lean crashes during the build: [{module, code, at}] (newest last, at most 20)
             "proof": str}             # which proof (CONTRACT "Several proofs"); absent = "17m"
 CRASHES_MAX = 20
+EXPORTER_RE = re.compile(r"lean4export v[0-9][0-9A-Za-z.\-]{0,30}( \+ parallel [0-9a-f]{8})?")
 CRASH_MODULE_RE = re.compile(r"[^\s\x00-\x1f]{1,200}")
 EXPORT_PROGRESS = {"bytes": int, "seconds": (int, float), "left_seconds": (int, float, type(None)),
                    "peak_memory_gb": (int, float, type(None)), "done": bool}
@@ -424,6 +427,10 @@ def check_record(rec, author: str, repo_path: str, prev, check_digest=False, now
                 rej.append("export_bytes must not be negative")
         elif rec["export_bytes"] != REF_EXPORT_BYTES:
             rej.append(f"export_bytes {rec['export_bytes']:,} is not the reference {REF_EXPORT_BYTES:,}")
+    if ("export_exporter" in rec or "export_fast_exit" in rec) and "export_sha256" not in rec:
+        rej.append("export_exporter and export_fast_exit need export_sha256")
+    if isinstance(rec.get("export_exporter"), str) and not EXPORTER_RE.fullmatch(rec["export_exporter"]):
+        rej.append("export_exporter must be 'lean4export <tag>', optionally '+ parallel <commit8>'")
     for c in rec.get("checkers") or []:
         if not (isinstance(c, dict) and set(c) == {"name", "version", "result", "seconds"} and isinstance(c["name"], str)
                 and isinstance(c["version"], str) and c["result"] in ("accept", "reject")
