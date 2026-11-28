@@ -194,6 +194,8 @@ python3 -I tests/check_statement.py && echo "--> ok" || { echo "--> TEST FAILED"
 print
 print "=== the 300K proof's optional export: hashes gathered, badge only with a pinned reference (2026-11-27)"
 python3 -I tests/check_export300k.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
+print "=== 300K export reference pinned"
+python3 -I tests/check_pin300k.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }
 print
 print "=== a renamed GitHub account: one row, old-login PRs still accepted (2026-11-26)"
 python3 -I tests/check_renamed.py && echo "--> ok" || { echo "--> TEST FAILED"; fails=$((fails+1)); }

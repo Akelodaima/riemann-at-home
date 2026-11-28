@@ -1495,7 +1495,8 @@ class Sign300K(unittest.TestCase):
 
 class Export300K(Sign300K):
     """The 300K proof's optional export (owner, 2026-11-27): lean4export v4.35.0 pinned by commit, the record carries
-    the hash either way; no reference yet, so the bot gathers hashes until three builders agree."""
+    the hash either way. Its reference was pinned 2026-11-28 once independent builders agreed; the no-reference path is
+    kept (a future proof starts without one) and tested with the reference patched out."""
     OUT = b"{\"meta\": 1}\n" * 500
 
     def fake_exporter(self, out=None):
@@ -1509,7 +1510,8 @@ class Export300K(Sign300K):
 
     def test_records_the_hash_with_no_reference(self):
         self.build()
-        code, out, err = self.export()
+        with unittest.mock.patch.dict(rah.PROOFS["300k"], {"export_sha256": None, "export_bytes": None}):
+            code, out, err = self.export()
         self.assertEqual(code, 0, err)
         sha = hashlib.sha256(self.OUT).hexdigest()
         self.assertIn(sha, out); self.assertIn("no 300K reference export yet", out)
@@ -1686,9 +1688,16 @@ class AutoExport300K(Export300K):
                                                                               logs=None, proof="300k")), 0)
         return buf.getvalue()
 
+    def test_the_pinned_300k_reference(self):
+        """Pinned 2026-11-28: the hash and size independent builders' exports agreed on, the same as the bot's."""
+        p = rah.PROOFS["300k"]
+        self.assertEqual(p["export_sha256"], "baf221c81749bf4bcbd6cd56238adfb4e8e780c38ef92d6a7ab458d57df36fc1")
+        self.assertEqual(p["export_bytes"], 4_485_867_644)
+
     def test_wording_names_the_badge_accurately(self):
         self.assertIn("300K EXPORT REPRODUCED badge", rah.EXPORT_300K_NUDGE)
-        self.assertIn("once three builders' exports agree", rah.EXPORT_300K_NUDGE)
+        self.assertIn("when it matches the reference", rah.EXPORT_300K_NUDGE)
+        self.assertNotIn("once three", rah.EXPORT_300K_NUDGE)
         self.assertIn("riemann-at-home export --proof 300k", rah.EXPORT_300K_NUDGE)
         self.assertIn("once three", rah.export_badge_note({"export_sha256": None}))
         self.assertNotIn("once three", rah.export_badge_note({"export_sha256": "ab" * 32}))

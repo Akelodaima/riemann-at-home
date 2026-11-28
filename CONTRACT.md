@@ -212,8 +212,9 @@ Mathlib's RiemannHypothesis; proved theorem is exactly that statement) are their
   (commit `5a9a355d…`), the same 38 export targets, hashed as it streams. The 300K record then carries
   `export_sha256` (64 hex) and `export_bytes`; the bot accepts any well-formed hash, but only on a whole build.
   `checkers` stay 17M-only.
-- There is no 300K reference yet (`PROOFS["300k"]["export_sha256"]` is null in the tool and the bot). It is pinned
-  in code once 3 independent builders' hashes agree.
+- The 300K reference is pinned (2026-11-28) in the tool and the bot, `PROOFS["300k"]`: `export_sha256`
+  `baf221c81749bf4bcbd6cd56238adfb4e8e780c38ef92d6a7ab458d57df36fc1`, `export_bytes` 4,485,867,644, after six independent builders' exports agreed (3 were needed).
+  A different hash is still accepted and shown; it only earns no badge.
 - data.json `"export_300k"`: `{"reference": sha|null, "agree_needed": 3, "builders": N, "hashes": {sha: [names]}}`,
   most-agreed hash first. The page shows one line under "The builders so far".
 - With a reference pinned, a builder whose newest 300K export matches it gets the badge kind `"export300k"`
@@ -252,7 +253,8 @@ Mathlib's RiemannHypothesis; proved theorem is exactly that statement) are their
     `/opt/riemann-at-home/grh`; module list `bot/modules-300k.txt` (src/**/*.lean sorted byte-wise, N = 803, sha256
     `f0b574a8...13d1`). Build: plain `lake build`; axioms: `lake env lean scripts/PrintAxioms.lean`. `whole_proof`
     needs all 803 modules and all five theorems printed; `axioms` = their axioms together, exactly the three.
-  - 300K has no Level 2 reference: `export_*` and `checkers` are rejected on 300K records. Since 2026-11-27 a whole 300K
+  - 300K has no Levels: `checkers` are rejected on 300K records, and its export is optional (see "300K export":
+    a pinned reference since 2026-11-28 gives a badge, not a Level). Since 2026-11-27 a whole 300K
     record with the three standard axioms counts for the one joint statement (300K BUILT badge; see "Levels and
     the joint statement").
     `olean_digest` has no 300K reference either (not checked, like 17M today).

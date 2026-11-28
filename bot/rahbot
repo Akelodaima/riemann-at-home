@@ -120,9 +120,10 @@ PROOFS = {
              "axioms": EXPECTED_AXIOMS,
              "levels": False,              # no Level 2 export reference for 300K yet: a whole build is the finish
              "digest_reference": False,    # no reference build to compare olean_digest with (off for 17M too)
-             # optional export (owner 2026-11-27): records carry any hash; None until three builders agree, then
-             # pinned here (and in the CLI), and a match earns the 300K EXPORT REPRODUCED badge
-             "export_sha256": None, "export_bytes": None},
+             # optional export (owner 2026-11-27): records carry any hash. Pinned 2026-11-28, when six independent
+             # builders' exports agreed on this hash and size (CONTRACT "300K export"); a match earns the 300K
+             # EXPORT REPRODUCED badge, a different one is carried but earns nothing
+             "export_sha256": "baf221c81749bf4bcbd6cd56238adfb4e8e780c38ef92d6a7ab458d57df36fc1", "export_bytes": 4_485_867_644},
 }
 DEFAULT_PROOF = "17m"
 EXPORT_300K_AGREE = 3                 # independent builders with one 300K export hash before it is pinned
@@ -412,7 +413,7 @@ def check_record(rec, author: str, repo_path: str, prev, check_digest=False, now
     # levels: export reproduced (2), independent checker accepted it (3); signing needs Level 2+
     if "export_sha256" in rec:
         if not rec["whole_proof"]: rej.append("export_sha256 is only meaningful with whole_proof")
-        if not P["levels"]:                            # 300K: any hash is carried (gathered until builders agree)
+        if not P["levels"]:                            # 300K: any hash is carried; a badge needs the pinned one
             if not re.fullmatch(r"[0-9a-f]{64}", str(rec["export_sha256"])):
                 rej.append("export_sha256 must be 64 lowercase hex characters")
         elif str(rec["export_sha256"]).lower() != REF_EXPORT_SHA256: rej.append("export does not reproduce the reference")
@@ -778,7 +779,7 @@ def build_data(dirs, now=None, signed_map=None, firsts=None, published=None) -> 
         # first to finish comes first, like the leaderboard (one joint statement, 2026-11-27)
         "signatures": sorted(signatures, key=lambda x: (x["first_finished"], x["name"])),
         "validated": VALIDATED,
-        # the 300K proof's optional export: no reference yet; everyone's hash, to see when three builders agree
+        # the 300K proof's optional export: the pinned reference, and everyone's hash, most agreed first
         "export_300k": {"reference": PROOFS["300k"]["export_sha256"], "agree_needed": EXPORT_300K_AGREE,
                         "builders": sum(len(v) for v in exports_300k.values()),
                         "hashes": {h: sorted(v) for h, v in sorted(exports_300k.items(), key=lambda kv: (-len(kv[1]), kv[0]))}},

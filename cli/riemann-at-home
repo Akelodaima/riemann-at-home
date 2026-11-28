@@ -63,8 +63,8 @@ Nat.add Nat.sub Nat.mul Nat.pow Nat.gcd Nat.div Nat.mod Nat.beq Nat.ble Nat.land
 EXPORT_TARGETS_SHA256 = "9eeb2e5e55be4a78f6e4983fc950dba915b45ad8aeb7a02a32341927a89e05e8"
 EXPORT_TARGETS = EXPORT_TARGETS_TXT.split()          # `$(cat export-targets.txt)`: one argument per word
 # The 300K proof's optional export (owner 2026-11-27): the same targets (its five theorems carry the same names, and its
-# axiom audit checks them), exported by lean4export at the release for its Lean, pinned by commit. There is no
-# reference yet: records carry whatever hash a builder got, and one is pinned here once three independent builders agree.
+# axiom audit checks them), exported by lean4export at the release for its Lean, pinned by commit. Records carry
+# whatever hash a builder got; the reference below was pinned 2026-11-28, when six independent builders' exports agreed.
 EXPORTER_300K_TAG = "v4.35.0"
 EXPORTER_300K_COMMIT = "5a9a355dc6c5fd82b69058d433e2ae2e8dfbf8fe"   # what the tag points to (2026-11-27)
 EXPORT_TARGETS_300K = EXPORT_TARGETS
@@ -145,9 +145,10 @@ PROOFS = {
              "theorems": ["riemannHypothesis", "riemannZeta_eq_zero_re", "LFunction_ne_zero_of_half_lt_re",
                           "LFunction_eq_zero_re", "LFunction_eq_zero_re_of_isPrimitive"],
              "state": "300k", "levels": False, "whole_gb": 25, "takes": "20 min to 2 h on most computers",
-             # optional export (no Levels): no reference yet, so None; pin sha256 + bytes once builders agree
+             # optional export (no Levels): sha256 + bytes pinned 2026-11-28 once independent builders agreed
              "exporter_tag": EXPORTER_300K_TAG, "exporter_commit": EXPORTER_300K_COMMIT,
-             "export_targets": EXPORT_TARGETS_300K, "export_sha256": None, "export_bytes": None},
+             "export_targets": EXPORT_TARGETS_300K,
+             "export_sha256": "baf221c81749bf4bcbd6cd56238adfb4e8e780c38ef92d6a7ab458d57df36fc1", "export_bytes": 4_485_867_644},
 }
 DEFAULT_PROOF = "17m"                 # what a record, a folder or a command means when it does not say
 SHARED_KEYS = ("consent", "display", "submit", "proofs", "repo",    # the person's choices, not one build's
@@ -1481,8 +1482,8 @@ def axiom_check(ctx: Ctx) -> int:
         return subprocess.run(cmd, cwd=ctx.folder, stdout=f, stderr=subprocess.STDOUT, env=lean_env()).returncode
 
 
-EXPORT_300K_BADGE = ("which earns the 300K EXPORT REPRODUCED badge on the joint statement once three builders' exports "
-                     "agree")                     # the badge needs a pinned reference (owner, 2026-11-27)
+EXPORT_300K_BADGE = ("which earns the 300K EXPORT REPRODUCED badge on the joint statement when it matches the "
+                     "reference")                 # reference pinned 2026-11-28
 EXPORT_300K_NUDGE = ("Your 300K build can be exported too (about 5 minutes), " + EXPORT_300K_BADGE +
                      ": riemann-at-home export --proof 300k")
 
@@ -1524,9 +1525,9 @@ def export_nudge(ctx: Ctx, a=None) -> str:
         try:
             c = ctx if ctx.proof == pk else Ctx(argparse.Namespace(folder=None, logs=None), proof=pk)
             if export_300k_pending(c):
-                return EXPORT_300K_NUDGE if c.p.get("export_sha256") is None else (
+                return EXPORT_300K_NUDGE if c.p.get("export_sha256") else (    # pinned 2026-11-28
                     "Your 300K build can be exported too (about 5 minutes), which earns the 300K EXPORT REPRODUCED "
-                    "badge on the joint statement: riemann-at-home export --proof 300k")
+                    "badge on the joint statement once three builders' exports agree: riemann-at-home export --proof 300k")
         except Exception:
             continue
     return ""

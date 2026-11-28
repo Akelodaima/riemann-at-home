@@ -19,7 +19,7 @@ the original **17M** build. `setup` asks which one to build: 1) the new proof (3
 `/Users/Shared/riemann-at-home/grh`, Linux `/opt/riemann-at-home/grh`; 20 min to 2 h on most computers. A whole 300K
 build whose five theorems use only the three standard axioms is its finish. Its export then runs by itself (about
 5 minutes, nothing written to disk; `--no-export` skips it, `riemann-at-home export --proof 300k` runs it later), and
-earns the 300K EXPORT REPRODUCED badge on the joint statement once three builders' exports agree.
+earns the 300K EXPORT REPRODUCED badge on the joint statement when it matches the reference (pinned 2026-11-28).
 300K builds are submitted like 17M ones (one pull request per build, the record says `"proof": "300k"`)
 and ranked on the leaderboard. Its switch shows two lists, 17M and 300K, each by time to build (fastest first), or everyone in the order they finished. Computers already set up for 17M keep working exactly as before (add the new proof with
 `setup --proof 300k`, then `build --proof 300k`).
