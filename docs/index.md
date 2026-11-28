@@ -8,14 +8,14 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 - Code and instructions: https://github.com/riemann-at-home/riemann-at-home
 - Discuss on Hacker News: https://news.ycombinator.com/item?id=50594006
 - Raw data: https://riemann-at-home.github.io/riemann-at-home/data.json (format: CONTRACT.md in the repository)
-- Updated: 2026-11-28T08:48:35Z
+- Updated: 2026-11-28T09:03:15Z
 
 ## Totals
 
 - Builders: 73
 - Modules built at least once: 175,187 of 175,187 (100.0%)
 - Modules built 3 or more times: 175,187
-- Whole proofs finished (17M): 25
+- Whole proofs finished (17M): 26
 - Whole proofs finished (300K): 55
 
 ## Leaderboard
@@ -40,42 +40,42 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 16. cardoso-neto (github.com/cardoso-neto): 17M: all 175,187 modules in 33.6 h; 300K: all 803 modules in 0.5 h, AMD Ryzen 9 5900X 12-Core Processor
 17. masoud-al (github.com/masoud-al): 17M: all 175,187 modules in 17.5 h; 300K: all 803 modules in 0.2 h, AMD Ryzen 9 7900X3D 12-Core Processor
 18. oliverweissl (github.com/oliverweissl): 17M: all 175,187 modules in 10.7 h; 300K: all 803 modules in 0.2 h, AMD EPYC 9354P 32-Core Processor
+19. Ayake: 17M: all 175,187 modules in 18.2 h; 300K: all 803 modules in 0.6 h, AMD EPYC 7402 24-Core Processor, exporting now
 
 ### 17M proof built
 
-19. jasonhansel (github.com/jasonhansel): 17M: all 175,187 modules in 11.4 h, Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz, export reproduced, signed the joint statement
-20. rib3ye (github.com/rib3ye): 17M: all 175,187 modules in 48.6 h, Apple M2 Max, export reproduced, signed the joint statement
-21. gebhardtr (github.com/gebhardtr): 17M: all 175,187 modules in 60.4 h, AMD RYZEN AI MAX+ 395 w/ Radeon 8060S, export reproduced, signed the joint statement
-22. Andrea Shepard: 17M: all 175,187 modules in 13.9 h, AMD Ryzen Threadripper PRO 3975WX 32-Cores, export reproduced, signed the joint statement
-23. sanzgiri (github.com/sanzgiri): 17M: all 175,187 modules in 41.0 h, Apple M4 Max, export reproduced, signed the joint statement
-24. milhouse1337 (github.com/milhouse1337): 17M: all 175,187 modules in 90.6 h, Apple M3 Ultra, export reproduced, signed the joint statement
-25. Ununhexium: 17M: all 175,187 modules in 57.5 h, AMD Ryzen 7 5700G with Radeon Graphics
+20. jasonhansel (github.com/jasonhansel): 17M: all 175,187 modules in 11.4 h, Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz, export reproduced, signed the joint statement
+21. rib3ye (github.com/rib3ye): 17M: all 175,187 modules in 48.6 h, Apple M2 Max, export reproduced, signed the joint statement
+22. gebhardtr (github.com/gebhardtr): 17M: all 175,187 modules in 60.4 h, AMD RYZEN AI MAX+ 395 w/ Radeon 8060S, export reproduced, signed the joint statement
+23. Andrea Shepard: 17M: all 175,187 modules in 13.9 h, AMD Ryzen Threadripper PRO 3975WX 32-Cores, export reproduced, signed the joint statement
+24. sanzgiri (github.com/sanzgiri): 17M: all 175,187 modules in 41.0 h, Apple M4 Max, export reproduced, signed the joint statement
+25. milhouse1337 (github.com/milhouse1337): 17M: all 175,187 modules in 90.6 h, Apple M3 Ultra, export reproduced, signed the joint statement
+26. Ununhexium: 17M: all 175,187 modules in 57.5 h, AMD Ryzen 7 5700G with Radeon Graphics
 
 ### 300K proof built
 
-26. VoX (github.com/VoX): 300K: all 803 modules in 0.5 h, AMD Ryzen 7 7800X3D 8-Core Processor
-27. signal-11: 300K: all 803 modules in 0.2 h, AMD Ryzen 9 9950X3D 16-Core Processor
-28. jk563 (github.com/jk563): 300K: all 803 modules in 0.8 h, AMD Ryzen 5 5600X 6-Core Processor
-29. jimjones: 300K: all 803 modules in 0.6 h, Apple M2 Pro
-30. tgragnato (github.com/tgragnato): 300K: all 803 modules in 1.0 h, Intel(R) Celeron(R) J6413 @ 1.80GHz
-31. ptescher (github.com/ptescher): 300K: all 803 modules in 6.0 h, Apple M4
-32. janfrode (github.com/janfrode): 300K: all 803 modules in 1.2 h, Apple M5 Max
-33. RealMonk (github.com/RealMonk): 300K: all 803 modules in 0.3 h, AMD Ryzen 9 9950X3D 16-Core Processor
-34. gero-stack (github.com/gero-stack): 300K: all 803 modules in 0.9 h, AMD Ryzen 7 7800X3D 8-Core Processor
-35. nwinter (github.com/nwinter): 300K: all 803 modules in 0.4 h, Apple M5 Ultra
-36. ksdme (github.com/ksdme): 300K: all 803 modules in 12.0 h, Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz
-37. Connell McGinley: 300K: all 803 modules in 4.8 h, Apple M2 Pro
-38. ic: 300K: all 803 modules in 5.3 h, Apple M4 Max
-39. yum-food (github.com/yum-food): 300K: all 803 modules in 0.3 h, AMD EPYC 9115 16-Core Processor
-40. Francois Beaune: 300K: all 803 modules in 0.6 h, AMD Ryzen Threadripper 3970X 32-Core Processor
-41. Xuarig (github.com/Xuarig): 300K: all 803 modules in 0.4 h, AMD Ryzen 9 9900X 12-Core Processor
-42. Nacholmo (github.com/Nacholmo): 300K: all 803 modules in 0.9 h, AMD Ryzen 5 3600 6-Core Processor
-43. mazne (github.com/mazne): 300K: all 803 modules in 0.5 h, Apple M4 Max
-44. wool-worm (github.com/wool-worm): 300K: all 803 modules in 2.7 h, Intel(R) Core(TM) i9-10885H CPU @ 2.40GHz
-45. IbnouT (github.com/IbnouT): 300K: all 803 modules in 0.3 h, AMD Ryzen 9 9950X3D2 16-Core Processor
-46. Akelodaima (github.com/Akelodaima): 300K: all 803 modules in 1.4 h, Intel(R) Core(TM) Ultra 7 258V
-47. DenysPiven (github.com/DenysPiven): 300K: all 803 modules in 0.6 h, Apple M4 Pro
-48. Ayake: 300K: all 803 modules in 0.6 h, AMD EPYC 7402 24-Core Processor
+27. VoX (github.com/VoX): 300K: all 803 modules in 0.5 h, AMD Ryzen 7 7800X3D 8-Core Processor
+28. signal-11: 300K: all 803 modules in 0.2 h, AMD Ryzen 9 9950X3D 16-Core Processor
+29. jk563 (github.com/jk563): 300K: all 803 modules in 0.8 h, AMD Ryzen 5 5600X 6-Core Processor
+30. jimjones: 300K: all 803 modules in 0.6 h, Apple M2 Pro
+31. tgragnato (github.com/tgragnato): 300K: all 803 modules in 1.0 h, Intel(R) Celeron(R) J6413 @ 1.80GHz
+32. ptescher (github.com/ptescher): 300K: all 803 modules in 6.0 h, Apple M4
+33. janfrode (github.com/janfrode): 300K: all 803 modules in 1.2 h, Apple M5 Max
+34. RealMonk (github.com/RealMonk): 300K: all 803 modules in 0.3 h, AMD Ryzen 9 9950X3D 16-Core Processor
+35. gero-stack (github.com/gero-stack): 300K: all 803 modules in 0.9 h, AMD Ryzen 7 7800X3D 8-Core Processor
+36. nwinter (github.com/nwinter): 300K: all 803 modules in 0.4 h, Apple M5 Ultra
+37. ksdme (github.com/ksdme): 300K: all 803 modules in 12.0 h, Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz
+38. Connell McGinley: 300K: all 803 modules in 4.8 h, Apple M2 Pro
+39. ic: 300K: all 803 modules in 5.3 h, Apple M4 Max
+40. yum-food (github.com/yum-food): 300K: all 803 modules in 0.3 h, AMD EPYC 9115 16-Core Processor
+41. Francois Beaune: 300K: all 803 modules in 0.6 h, AMD Ryzen Threadripper 3970X 32-Core Processor
+42. Xuarig (github.com/Xuarig): 300K: all 803 modules in 0.4 h, AMD Ryzen 9 9900X 12-Core Processor
+43. Nacholmo (github.com/Nacholmo): 300K: all 803 modules in 0.9 h, AMD Ryzen 5 3600 6-Core Processor
+44. mazne (github.com/mazne): 300K: all 803 modules in 0.5 h, Apple M4 Max
+45. wool-worm (github.com/wool-worm): 300K: all 803 modules in 2.7 h, Intel(R) Core(TM) i9-10885H CPU @ 2.40GHz
+46. IbnouT (github.com/IbnouT): 300K: all 803 modules in 0.3 h, AMD Ryzen 9 9950X3D2 16-Core Processor
+47. Akelodaima (github.com/Akelodaima): 300K: all 803 modules in 1.4 h, Intel(R) Core(TM) Ultra 7 258V
+48. DenysPiven (github.com/DenysPiven): 300K: all 803 modules in 0.6 h, Apple M4 Pro
 49. FlorianPicca (github.com/FlorianPicca): 300K: all 803 modules in 0.4 h, 13th Gen Intel(R) Core(TM) i9-13900HX
 50. kazwoot: 300K: all 803 modules in 3.7 h, Apple M4 Max
 51. karimbacchus (github.com/karimbacchus): 300K: all 803 modules in 0.6 h, Apple M5 Pro
@@ -94,25 +94,25 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 ### Building now
 
 - Nico: 788 of 803 300K modules (98.1%), Apple M5
-- nwinter (github.com/nwinter): 169,619 of 175,187 17M modules (96.8%), Apple M5 Ultra
+- nwinter (github.com/nwinter): 171,247 of 175,187 17M modules (97.8%), Apple M5 Ultra
 - cardoso-neto (github.com/cardoso-neto): 153,020 of 175,187 17M modules (87.3%), AMD Ryzen 7 7700X 8-Core Processor
 - bha: 614 of 803 300K modules (76.5%), 11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz
-- beammeupscottyyy (github.com/beammeupscottyyy): 458 of 803 300K modules (57.0%), Apple M3 Pro
-- tgragnato (github.com/tgragnato): 97,435 of 175,187 17M modules (55.6%), Intel(R) Celeron(R) J6413 @ 1.80GHz
-- Stephen Frost: 79,398 of 175,187 17M modules (45.3%), AMD Ryzen AI 7 350 w/ Radeon 860M
-- DenysPiven (github.com/DenysPiven): 75,723 of 175,187 17M modules (43.2%), Apple M4 Pro
+- beammeupscottyyy (github.com/beammeupscottyyy): 463 of 803 300K modules (57.7%), Apple M3 Pro
+- tgragnato (github.com/tgragnato): 97,709 of 175,187 17M modules (55.8%), Intel(R) Celeron(R) J6413 @ 1.80GHz
+- Stephen Frost: 79,840 of 175,187 17M modules (45.6%), AMD Ryzen AI 7 350 w/ Radeon 860M
+- DenysPiven (github.com/DenysPiven): 76,547 of 175,187 17M modules (43.7%), Apple M4 Pro
 - rcland12 (github.com/rcland12): 64,772 of 175,187 17M modules (37.0%), AMD EPYC 7742 64-Core Processor
-- Francois Beaune: 59,339 of 175,187 17M modules (33.9%), AMD Ryzen Threadripper 3970X 32-Core Processor
+- Francois Beaune: 59,909 of 175,187 17M modules (34.2%), AMD Ryzen Threadripper 3970X 32-Core Processor
 - Warren Jennings: 54,272 of 175,187 17M modules (31.0%), Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz
-- alvarezjuan (github.com/alvarezjuan): 49,398 of 175,187 17M modules (28.2%), 13th Gen Intel(R) Core(TM) i9-13900H
-- jimjones: 47,976 of 175,187 17M modules (27.4%), Apple M2 Pro
-- Akelodaima (github.com/Akelodaima): 26,374 of 175,187 17M modules (15.1%), Intel(R) Core(TM) Ultra 7 258V
+- alvarezjuan (github.com/alvarezjuan): 50,168 of 175,187 17M modules (28.6%), 13th Gen Intel(R) Core(TM) i9-13900H
+- jimjones: 47,995 of 175,187 17M modules (27.4%), Apple M2 Pro
+- Akelodaima (github.com/Akelodaima): 26,404 of 175,187 17M modules (15.1%), Intel(R) Core(TM) Ultra 7 258V
 - brothberg (github.com/brothberg): 116 of 803 300K modules (14.4%), Apple M1
 - framiere (github.com/framiere): 21,921 of 175,187 17M modules (12.5%), Apple M4 Pro
-- 6DammK9 (github.com/6DammK9): 10,476 of 175,187 17M modules (6.0%), Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz
+- 6DammK9 (github.com/6DammK9): 13,920 of 175,187 17M modules (7.9%), Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz
 - Carl Aza: 19 of 803 300K modules (2.4%), Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
 - Aerlinger (github.com/Aerlinger): 3,793 of 175,187 17M modules (2.2%), Apple M5 Pro
-- rogeressig: 769 of 175,187 17M modules (0.4%), Apple M4 Pro
+- rogeressig: 1,575 of 175,187 17M modules (0.9%), Apple M4 Pro
 - sergey9295 (github.com/sergey9295): 441 of 175,187 17M modules (0.3%), AMD Ryzen 5 5600X 6-Core Processor
 - luvchurchill (github.com/luvchurchill): 1 of 175,187 17M modules (0.0%), Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz
 
@@ -208,7 +208,7 @@ Signatures so far: 62, in the order they first finished.
 - Akelodaima (first finished 2026-11-27, added from their build record): 300K BUILT
 - DenysPiven (first finished 2026-11-27, added from their build record): 300K BUILT
 - masoud-al (first finished 2026-11-27, added from their build record): 17M BUILT, 300K BUILT
-- Ayake (first finished 2026-11-27, added from their build record): 300K BUILT
+- Ayake (first finished 2026-11-27, added from their build record): 17M BUILT, 300K BUILT
 - FlorianPicca (first finished 2026-11-27, added from their build record): 300K BUILT
 - kazwoot (first finished 2026-11-27, added from their build record): 300K BUILT
 - karimbacchus (first finished 2026-11-27, added from their build record): 300K BUILT
