@@ -8,7 +8,7 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 - Code and instructions: https://github.com/riemann-at-home/riemann-at-home
 - Discuss on Hacker News: https://news.ycombinator.com/item?id=50594006
 - Raw data: https://riemann-at-home.github.io/riemann-at-home/data.json (format: CONTRACT.md in the repository)
-- Updated: 2026-11-28T12:29:59Z
+- Updated: 2026-11-28T12:44:35Z
 
 ## Totals
 
@@ -95,25 +95,25 @@ Levent Alpöge's Lean proof of the Riemann Hypothesis (17M) has 175,187 modules.
 ### Building now
 
 - Nico: 788 of 803 300K modules (98.1%), Apple M5
-- cardoso-neto (github.com/cardoso-neto): 160,660 of 175,187 17M modules (91.7%), AMD Ryzen 7 7700X 8-Core Processor
+- cardoso-neto (github.com/cardoso-neto): 161,022 of 175,187 17M modules (91.9%), AMD Ryzen 7 7700X 8-Core Processor
 - bha: 614 of 803 300K modules (76.5%), 11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz
-- tgragnato (github.com/tgragnato): 100,613 of 175,187 17M modules (57.4%), Intel(R) Celeron(R) J6413 @ 1.80GHz
+- tgragnato (github.com/tgragnato): 100,752 of 175,187 17M modules (57.5%), Intel(R) Celeron(R) J6413 @ 1.80GHz
 - DenysPiven (github.com/DenysPiven): 87,345 of 175,187 17M modules (49.9%), Apple M4 Pro
-- Stephen Frost: 85,204 of 175,187 17M modules (48.6%), AMD Ryzen AI 7 350 w/ Radeon 860M
+- Stephen Frost: 85,807 of 175,187 17M modules (49.0%), AMD Ryzen AI 7 350 w/ Radeon 860M
+- alvarezjuan (github.com/alvarezjuan): 64,886 of 175,187 17M modules (37.0%), 13th Gen Intel(R) Core(TM) i9-13900H
 - rcland12 (github.com/rcland12): 64,772 of 175,187 17M modules (37.0%), AMD EPYC 7742 64-Core Processor
-- alvarezjuan (github.com/alvarezjuan): 63,458 of 175,187 17M modules (36.2%), 13th Gen Intel(R) Core(TM) i9-13900H
-- Francois Beaune: 63,293 of 175,187 17M modules (36.1%), AMD Ryzen Threadripper 3970X 32-Core Processor
+- Francois Beaune: 63,442 of 175,187 17M modules (36.2%), AMD Ryzen Threadripper 3970X 32-Core Processor
 - Warren Jennings: 54,272 of 175,187 17M modules (31.0%), Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz
-- jimjones: 48,567 of 175,187 17M modules (27.7%), Apple M2 Pro
-- 6DammK9 (github.com/6DammK9): 45,841 of 175,187 17M modules (26.2%), Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz
-- Akelodaima (github.com/Akelodaima): 28,147 of 175,187 17M modules (16.1%), Intel(R) Core(TM) Ultra 7 258V
+- jimjones: 48,596 of 175,187 17M modules (27.7%), Apple M2 Pro
+- 6DammK9 (github.com/6DammK9): 47,408 of 175,187 17M modules (27.1%), Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz
+- Akelodaima (github.com/Akelodaima): 28,391 of 175,187 17M modules (16.2%), Intel(R) Core(TM) Ultra 7 258V
 - brothberg (github.com/brothberg): 116 of 803 300K modules (14.4%), Apple M1
 - framiere (github.com/framiere): 21,921 of 175,187 17M modules (12.5%), Apple M4 Pro
-- rogeressig: 18,786 of 175,187 17M modules (10.7%), Apple M4 Pro
+- rogeressig: 19,550 of 175,187 17M modules (11.2%), Apple M4 Pro
 - Carl Aza: 26 of 803 300K modules (3.2%), Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
 - Aerlinger (github.com/Aerlinger): 3,793 of 175,187 17M modules (2.2%), Apple M5 Pro
+- beammeupscottyyy (github.com/beammeupscottyyy): 536 of 175,187 17M modules (0.3%), Apple M3 Pro
 - sergey9295 (github.com/sergey9295): 441 of 175,187 17M modules (0.3%), AMD Ryzen 5 5600X 6-Core Processor
-- beammeupscottyyy (github.com/beammeupscottyyy): 420 of 175,187 17M modules (0.2%), Apple M3 Pro
 - luvchurchill (github.com/luvchurchill): 1 of 175,187 17M modules (0.0%), Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz
 
 ## Also checked independently by
@@ -206,7 +206,7 @@ Signatures so far: 63, in the order they first finished.
 - IbnouT (first finished 2026-11-27, added from their build record): 300K BUILT
 - rcland12 (signed 2026-11-27): 17M BUILT, 300K BUILT, EXPORT REPRODUCED, 300K EXPORT REPRODUCED
 - Akelodaima (first finished 2026-11-27, added from their build record): 300K BUILT
-- DenysPiven (first finished 2026-11-27, added from their build record): 300K BUILT
+- DenysPiven (signed 2026-11-28): 300K BUILT
 - masoud-al (first finished 2026-11-27, added from their build record): 17M BUILT, 300K BUILT
 - Ayake (signed 2026-11-28): 17M BUILT, 300K BUILT, EXPORT REPRODUCED
 - FlorianPicca (first finished 2026-11-27, added from their build record): 300K BUILT
